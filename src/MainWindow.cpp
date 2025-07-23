@@ -31,6 +31,7 @@
 #include <QProgressBar>
 #include <QComboBox>
 #include <QListWidget>
+#include <QClipboard>
 
 Q_DECLARE_METATYPE(DiscoveredCamera)
 
@@ -81,9 +82,39 @@ private:    void setupUI()
         
         m_modelEdit = new QLineEdit(this);
         
+        // Credentials section with group box for better organization
+        QGroupBox* credentialsGroup = new QGroupBox("Camera Credentials", this);
+        QFormLayout* credentialsLayout = new QFormLayout(credentialsGroup);
+        
         m_usernameEdit = new QLineEdit(this);
+        m_usernameEdit->setPlaceholderText("Enter camera username (e.g., admin)");
+        
+        // Password field with visibility toggle
+        QWidget* passwordWidget = new QWidget(this);
+        QHBoxLayout* passwordLayout = new QHBoxLayout(passwordWidget);
+        passwordLayout->setContentsMargins(0, 0, 0, 0);
+        
         m_passwordEdit = new QLineEdit(this);
         m_passwordEdit->setEchoMode(QLineEdit::Password);
+        m_passwordEdit->setPlaceholderText("Enter camera password");
+          m_passwordVisibilityButton = new QPushButton(this);
+        m_passwordVisibilityButton->setIcon(style()->standardIcon(QStyle::SP_FileDialogDetailedView));
+        m_passwordVisibilityButton->setToolTip("Show/Hide Password");
+        m_passwordVisibilityButton->setMaximumWidth(30);
+        m_passwordVisibilityButton->setFlat(true);
+        
+        connect(m_passwordVisibilityButton, &QPushButton::clicked, this, &CameraConfigDialog::togglePasswordVisibility);
+        
+        passwordLayout->addWidget(m_passwordEdit);
+        passwordLayout->addWidget(m_passwordVisibilityButton);
+        
+        credentialsLayout->addRow("Username:", m_usernameEdit);
+        credentialsLayout->addRow("Password:", passwordWidget);
+        
+        // Add credential presets button
+        m_credentialPresetsButton = new QPushButton("Load Common Credentials", this);
+        connect(m_credentialPresetsButton, &QPushButton::clicked, this, &CameraConfigDialog::showCredentialPresets);
+        credentialsLayout->addRow("", m_credentialPresetsButton);
         
         m_enabledCheckBox = new QCheckBox(this);
         m_enabledCheckBox->setChecked(true);
@@ -93,9 +124,25 @@ private:    void setupUI()
         layout->addRow("Port:", m_portSpinBox);
         layout->addRow("Brand:", m_brandComboBox);
         layout->addRow("Model:", m_modelEdit);
-        layout->addRow("Username:", m_usernameEdit);
-        layout->addRow("Password:", m_passwordEdit);
+        layout->addRow(credentialsGroup);
         layout->addRow("Enabled:", m_enabledCheckBox);
+        
+        // RTSP URL preview
+        m_rtspPreviewGroup = new QGroupBox("RTSP URL Preview", this);
+        QVBoxLayout* rtspLayout = new QVBoxLayout(m_rtspPreviewGroup);
+        
+        m_rtspUrlLabel = new QLabel("rtsp://username:password@192.168.1.100:554/stream", this);
+        m_rtspUrlLabel->setWordWrap(true);
+        m_rtspUrlLabel->setStyleSheet("QLabel { background-color: #f0f0f0; padding: 5px; border: 1px solid #ccc; }");
+        m_rtspUrlLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        
+        QPushButton* copyUrlButton = new QPushButton("Copy to Clipboard", this);
+        connect(copyUrlButton, &QPushButton::clicked, this, &CameraConfigDialog::copyRtspUrl);
+        
+        rtspLayout->addWidget(m_rtspUrlLabel);
+        rtspLayout->addWidget(copyUrlButton);
+        
+        layout->addRow(m_rtspPreviewGroup);
         
         QDialogButtonBox* buttonBox = new QDialogButtonBox(
             QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -103,8 +150,14 @@ private:    void setupUI()
         connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
         
         layout->addRow(buttonBox);
-    }
-      void loadCamera()
+        
+        // Connect signals to update RTSP preview
+        connect(m_usernameEdit, &QLineEdit::textChanged, this, &CameraConfigDialog::updateRtspPreview);
+        connect(m_passwordEdit, &QLineEdit::textChanged, this, &CameraConfigDialog::updateRtspPreview);
+        connect(m_ipEdit, &QLineEdit::textChanged, this, &CameraConfigDialog::updateRtspPreview);
+        connect(m_portSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &CameraConfigDialog::updateRtspPreview);
+        connect(m_brandComboBox, &QComboBox::currentTextChanged, this, &CameraConfigDialog::updateRtspPreview);
+    }    void loadCamera()
     {
         m_nameEdit->setText(m_camera.name());
         m_ipEdit->setText(m_camera.ipAddress());
@@ -114,6 +167,9 @@ private:    void setupUI()
         m_usernameEdit->setText(m_camera.username());
         m_passwordEdit->setText(m_camera.password());
         m_enabledCheckBox->setChecked(m_camera.isEnabled());
+        
+        // Update RTSP preview after loading
+        updateRtspPreview();
     }
     
     void saveCamera()
@@ -126,8 +182,7 @@ private:    void setupUI()
         m_camera.setUsername(m_usernameEdit->text().trimmed());
         m_camera.setPassword(m_passwordEdit->text());
         m_camera.setEnabled(m_enabledCheckBox->isChecked());
-    }
-      CameraConfig m_camera;
+    }    CameraConfig m_camera;
     QLineEdit* m_nameEdit;
     QLineEdit* m_ipEdit;
     QSpinBox* m_portSpinBox;
@@ -136,6 +191,478 @@ private:    void setupUI()
     QLineEdit* m_usernameEdit;
     QLineEdit* m_passwordEdit;
     QCheckBox* m_enabledCheckBox;
+    
+    // UI enhancement elements
+    QPushButton* m_passwordVisibilityButton;
+    QPushButton* m_credentialPresetsButton;
+    QGroupBox* m_rtspPreviewGroup;
+    QLabel* m_rtspUrlLabel;
+    
+private slots:
+    void togglePasswordVisibility()
+    {
+        if (m_passwordEdit->echoMode() == QLineEdit::Password) {
+            m_passwordEdit->setEchoMode(QLineEdit::Normal);
+            m_passwordVisibilityButton->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
+            m_passwordVisibilityButton->setToolTip("Hide Password");
+        } else {
+            m_passwordEdit->setEchoMode(QLineEdit::Password);
+            m_passwordVisibilityButton->setIcon(style()->standardIcon(QStyle::SP_FileDialogDetailedView));
+            m_passwordVisibilityButton->setToolTip("Show Password");
+        }
+    }
+    
+    void showCredentialPresets()
+    {
+        QDialog presetDialog(this);
+        presetDialog.setWindowTitle("Common Camera Credentials");
+        presetDialog.setModal(true);
+        presetDialog.resize(400, 300);
+        
+        QVBoxLayout* layout = new QVBoxLayout(&presetDialog);
+        
+        QLabel* infoLabel = new QLabel("Select common camera credentials based on brand:", &presetDialog);
+        layout->addWidget(infoLabel);
+        
+        QListWidget* presetList = new QListWidget(&presetDialog);
+        
+        // Add common presets
+        QListWidgetItem* hikvisionItem = new QListWidgetItem("Hikvision: admin / admin");
+        hikvisionItem->setData(Qt::UserRole, QStringList() << "admin" << "admin");
+        presetList->addItem(hikvisionItem);
+        
+        QListWidgetItem* cpplusItem = new QListWidgetItem("CP Plus: admin / admin");
+        cpplusItem->setData(Qt::UserRole, QStringList() << "admin" << "admin");
+        presetList->addItem(cpplusItem);
+        
+        QListWidgetItem* dahuaItem = new QListWidgetItem("Dahua: admin / admin");
+        dahuaItem->setData(Qt::UserRole, QStringList() << "admin" << "admin");
+        presetList->addItem(dahuaItem);
+        
+        QListWidgetItem* axisItem = new QListWidgetItem("Axis: root / pass");
+        axisItem->setData(Qt::UserRole, QStringList() << "root" << "pass");
+        presetList->addItem(axisItem);
+        
+        QListWidgetItem* foscamItem = new QListWidgetItem("Foscam: admin / (empty)");
+        foscamItem->setData(Qt::UserRole, QStringList() << "admin" << "");
+        presetList->addItem(foscamItem);
+        
+        QListWidgetItem* genericItem = new QListWidgetItem("Generic: admin / password");
+        genericItem->setData(Qt::UserRole, QStringList() << "admin" << "password");
+        presetList->addItem(genericItem);
+        
+        QListWidgetItem* emptyItem = new QListWidgetItem("No Authentication (empty credentials)");
+        emptyItem->setData(Qt::UserRole, QStringList() << "" << "");
+        presetList->addItem(emptyItem);
+        
+        layout->addWidget(presetList);
+        
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(
+            QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &presetDialog);
+        layout->addWidget(buttonBox);
+        
+        connect(buttonBox, &QDialogButtonBox::accepted, &presetDialog, &QDialog::accept);
+        connect(buttonBox, &QDialogButtonBox::rejected, &presetDialog, &QDialog::reject);
+        
+        connect(presetList, &QListWidget::itemDoubleClicked, [&](QListWidgetItem* item) {
+            QStringList credentials = item->data(Qt::UserRole).toStringList();
+            if (credentials.size() >= 2) {
+                m_usernameEdit->setText(credentials[0]);
+                m_passwordEdit->setText(credentials[1]);
+                presetDialog.accept();
+            }
+        });
+        
+        if (presetDialog.exec() == QDialog::Accepted) {
+            QListWidgetItem* currentItem = presetList->currentItem();
+            if (currentItem) {
+                QStringList credentials = currentItem->data(Qt::UserRole).toStringList();
+                if (credentials.size() >= 2) {
+                    m_usernameEdit->setText(credentials[0]);
+                    m_passwordEdit->setText(credentials[1]);
+                    updateRtspPreview();
+                }
+            }
+        }
+    }
+    
+    void updateRtspPreview()
+    {
+        QString username = m_usernameEdit->text().trimmed();
+        QString password = m_passwordEdit->text();
+        QString ipAddress = m_ipEdit->text().trimmed();
+        int port = m_portSpinBox->value();
+        QString brand = m_brandComboBox->currentText();
+        
+        if (ipAddress.isEmpty()) {
+            ipAddress = "192.168.1.100"; // Default placeholder
+        }
+        
+        // Generate brand-specific RTSP path
+        QString rtspPath = "/stream1"; // Default
+        if (brand == "Hikvision") {
+            rtspPath = "/Streaming/Channels/101";
+        } else if (brand == "CP Plus") {
+            rtspPath = "/cam/realmonitor?channel=1&subtype=0";
+        } else if (brand == "Dahua") {
+            rtspPath = "/cam/realmonitor?channel=1&subtype=0";
+        } else if (brand == "Axis") {
+            rtspPath = "/axis-media/media.amp";
+        } else if (brand == "Vivotek") {
+            rtspPath = "/live.sdp";
+        } else if (brand == "Foscam") {
+            rtspPath = "/videoMain";
+        }
+        
+        // Build RTSP URL with proper credentials handling
+        QString rtspUrl;
+        if (!username.isEmpty() || !password.isEmpty()) {
+            if (!username.isEmpty() && !password.isEmpty()) {
+                rtspUrl = QString("rtsp://%1:%2@%3:%4%5").arg(username, password, ipAddress).arg(port).arg(rtspPath);
+            } else if (!username.isEmpty()) {
+                rtspUrl = QString("rtsp://%1@%2:%3%4").arg(username, ipAddress).arg(port).arg(rtspPath);
+            } else {
+                // Only password (unusual but handled)
+                rtspUrl = QString("rtsp://:%1@%2:%3%4").arg(password, ipAddress).arg(port).arg(rtspPath);
+            }
+        } else {
+            // No credentials
+            rtspUrl = QString("rtsp://%1:%2%3").arg(ipAddress).arg(port).arg(rtspPath);
+        }
+        
+        m_rtspUrlLabel->setText(rtspUrl);
+        
+        // Update tooltip with additional format examples
+        QString tooltip = QString("RTSP URL for %1 camera\n\nCommon formats for %1:\n").arg(brand);
+        
+        if (brand == "Hikvision") {
+            tooltip += "• /Streaming/Channels/101 (Main stream)\n";
+            tooltip += "• /Streaming/Channels/102 (Sub stream)\n";
+            tooltip += "• /h264_stream";
+        } else if (brand == "CP Plus") {
+            tooltip += "• /cam/realmonitor?channel=1&subtype=0 (Main)\n";
+            tooltip += "• /cam/realmonitor?channel=1&subtype=1 (Sub)\n";
+            tooltip += "• /streaming/channels/1";
+        } else if (brand == "Dahua") {
+            tooltip += "• /cam/realmonitor?channel=1&subtype=0\n";
+            tooltip += "• /streaming/channels/1";
+        } else if (brand == "Axis") {
+            tooltip += "• /axis-media/media.amp\n";
+            tooltip += "• /mjpg/video.mjpg";
+        } else {
+            tooltip += "• /stream1\n• /live\n• /video1";
+        }
+        
+        m_rtspUrlLabel->setToolTip(tooltip);
+    }
+    
+    void copyRtspUrl()
+    {
+        QApplication::clipboard()->setText(m_rtspUrlLabel->text());
+        QMessageBox::information(this, "Copied", "RTSP URL copied to clipboard!");    }
+};
+
+// Camera Information Dialog
+class CameraInfoDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+    explicit CameraInfoDialog(const CameraConfig& camera, QWidget *parent = nullptr)
+        : QDialog(parent), m_camera(camera)
+    {
+        setWindowTitle(QString("Camera Information - %1").arg(camera.name()));
+        setModal(true);
+        resize(600, 500);
+        
+        setupUI();
+        updateRtspInfo();
+    }
+
+private slots:
+    void copyMainRtspUrl()
+    {
+        QApplication::clipboard()->setText(m_mainRtspLabel->text());
+        showCopyMessage("Main RTSP URL copied to clipboard!");
+    }
+    
+    void copyExternalRtspUrl()
+    {
+        QApplication::clipboard()->setText(m_externalRtspLabel->text());
+        showCopyMessage("External RTSP URL copied to clipboard!");
+    }
+    
+    void copyAlternativeUrl()
+    {
+        QListWidgetItem* currentItem = m_alternativeUrlsList->currentItem();
+        if (currentItem) {
+            QApplication::clipboard()->setText(currentItem->text());
+            showCopyMessage("Alternative RTSP URL copied to clipboard!");
+        }
+    }
+    
+    void editCamera()
+    {
+        accept();
+        QTimer::singleShot(0, parent(), [this]() {
+            if (MainWindow* mainWindow = qobject_cast<MainWindow*>(parent())) {
+                mainWindow->editCamera();
+            }
+        });
+    }
+    
+    void testConnection()
+    {
+        accept();
+        QTimer::singleShot(0, parent(), [this]() {
+            if (MainWindow* mainWindow = qobject_cast<MainWindow*>(parent())) {
+                mainWindow->testCamera();
+            }
+        });
+    }
+
+private:
+    void setupUI()
+    {
+        QVBoxLayout* mainLayout = new QVBoxLayout(this);
+        
+        // Camera details group
+        QGroupBox* detailsGroup = new QGroupBox("Camera Details", this);
+        QFormLayout* detailsLayout = new QFormLayout(detailsGroup);
+        
+        detailsLayout->addRow("Name:", new QLabel(m_camera.name()));
+        detailsLayout->addRow("Brand:", new QLabel(m_camera.brand().isEmpty() ? "Generic" : m_camera.brand()));
+        detailsLayout->addRow("Model:", new QLabel(m_camera.model().isEmpty() ? "Unknown" : m_camera.model()));
+        detailsLayout->addRow("IP Address:", new QLabel(m_camera.ipAddress()));
+        detailsLayout->addRow("Port:", new QLabel(QString::number(m_camera.port())));
+        detailsLayout->addRow("External Port:", new QLabel(QString::number(m_camera.externalPort())));
+        
+        // Credentials info with privacy
+        QString credentialInfo = generateCredentialInfo();
+        detailsLayout->addRow("Credentials:", new QLabel(credentialInfo));
+        
+        detailsLayout->addRow("Status:", new QLabel(m_camera.isEnabled() ? "Enabled" : "Disabled"));
+        
+        mainLayout->addWidget(detailsGroup);
+        
+        // RTSP URLs group
+        QGroupBox* rtspGroup = new QGroupBox("RTSP URLs", this);
+        QVBoxLayout* rtspLayout = new QVBoxLayout(rtspGroup);
+        
+        // Main RTSP URL (local network)
+        QHBoxLayout* mainRtspLayout = new QHBoxLayout;
+        QLabel* mainLabel = new QLabel("Local Network URL:", this);
+        mainLabel->setStyleSheet("font-weight: bold;");
+        mainRtspLayout->addWidget(mainLabel);
+        
+        m_mainRtspLabel = new QLabel(this);
+        m_mainRtspLabel->setWordWrap(true);
+        m_mainRtspLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        m_mainRtspLabel->setStyleSheet("QLabel { background-color: #f0f8ff; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; }");
+        
+        QPushButton* copyMainBtn = new QPushButton("Copy", this);
+        copyMainBtn->setMaximumWidth(60);
+        connect(copyMainBtn, &QPushButton::clicked, this, &CameraInfoDialog::copyMainRtspUrl);
+        
+        QHBoxLayout* mainUrlLayout = new QHBoxLayout;
+        mainUrlLayout->addWidget(m_mainRtspLabel, 1);
+        mainUrlLayout->addWidget(copyMainBtn);
+        
+        rtspLayout->addLayout(mainRtspLayout);
+        rtspLayout->addLayout(mainUrlLayout);
+        
+        // External RTSP URL (for external access)
+        QHBoxLayout* externalRtspLayout = new QHBoxLayout;
+        QLabel* externalLabel = new QLabel("External Access URL:", this);
+        externalLabel->setStyleSheet("font-weight: bold;");
+        externalRtspLayout->addWidget(externalLabel);
+        
+        m_externalRtspLabel = new QLabel(this);
+        m_externalRtspLabel->setWordWrap(true);
+        m_externalRtspLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        m_externalRtspLabel->setStyleSheet("QLabel { background-color: #f0fff0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; }");
+        
+        QPushButton* copyExternalBtn = new QPushButton("Copy", this);
+        copyExternalBtn->setMaximumWidth(60);
+        connect(copyExternalBtn, &QPushButton::clicked, this, &CameraInfoDialog::copyExternalRtspUrl);
+        
+        QHBoxLayout* externalUrlLayout = new QHBoxLayout;
+        externalUrlLayout->addWidget(m_externalRtspLabel, 1);
+        externalUrlLayout->addWidget(copyExternalBtn);
+        
+        rtspLayout->addLayout(externalRtspLayout);
+        rtspLayout->addLayout(externalUrlLayout);
+        
+        // Alternative RTSP paths
+        QLabel* altLabel = new QLabel("Alternative RTSP Paths:", this);
+        altLabel->setStyleSheet("font-weight: bold;");
+        rtspLayout->addWidget(altLabel);
+        
+        m_alternativeUrlsList = new QListWidget(this);
+        m_alternativeUrlsList->setMaximumHeight(120);
+        connect(m_alternativeUrlsList, &QListWidget::itemDoubleClicked, this, &CameraInfoDialog::copyAlternativeUrl);
+        rtspLayout->addWidget(m_alternativeUrlsList);
+        
+        QPushButton* copyAltBtn = new QPushButton("Copy Selected Alternative", this);
+        connect(copyAltBtn, &QPushButton::clicked, this, &CameraInfoDialog::copyAlternativeUrl);
+        rtspLayout->addWidget(copyAltBtn);
+        
+        mainLayout->addWidget(rtspGroup);
+        
+        // Action buttons
+        QHBoxLayout* buttonLayout = new QHBoxLayout;
+        
+        QPushButton* editBtn = new QPushButton("Edit Camera", this);
+        editBtn->setIcon(style()->standardIcon(QStyle::SP_FileDialogDetailedView));
+        connect(editBtn, &QPushButton::clicked, this, &CameraInfoDialog::editCamera);
+        buttonLayout->addWidget(editBtn);
+        
+        QPushButton* testBtn = new QPushButton("Test Connection", this);
+        testBtn->setIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
+        connect(testBtn, &QPushButton::clicked, this, &CameraInfoDialog::testConnection);
+        buttonLayout->addWidget(testBtn);
+        
+        buttonLayout->addStretch();
+        
+        QPushButton* closeBtn = new QPushButton("Close", this);
+        connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
+        buttonLayout->addWidget(closeBtn);
+        
+        mainLayout->addLayout(buttonLayout);
+    }
+    
+    void updateRtspInfo()
+    {
+        QString username = m_camera.username();
+        QString password = m_camera.password();
+        QString ipAddress = m_camera.ipAddress();
+        int port = m_camera.port();
+        int externalPort = m_camera.externalPort();
+        QString brand = m_camera.brand();
+        
+        // Generate brand-specific RTSP path
+        QString rtspPath = "/stream1"; // Default
+        if (brand == "Hikvision") {
+            rtspPath = "/Streaming/Channels/101";
+        } else if (brand == "CP Plus") {
+            rtspPath = "/cam/realmonitor?channel=1&subtype=0";
+        } else if (brand == "Dahua") {
+            rtspPath = "/cam/realmonitor?channel=1&subtype=0";
+        } else if (brand == "Axis") {
+            rtspPath = "/axis-media/media.amp";
+        } else if (brand == "Vivotek") {
+            rtspPath = "/live.sdp";
+        } else if (brand == "Foscam") {
+            rtspPath = "/videoMain";
+        }
+        
+        // Build RTSP URLs with proper credentials handling
+        QString baseLocalUrl = QString("rtsp://%1:%2").arg(ipAddress).arg(port);
+        QString baseExternalUrl = QString("rtsp://[EXTERNAL_IP]:%1").arg(externalPort);
+        
+        QString localRtspUrl, externalRtspUrl;
+        
+        if (!username.isEmpty() || !password.isEmpty()) {
+            if (!username.isEmpty() && !password.isEmpty()) {
+                localRtspUrl = QString("rtsp://%1:%2@%3:%4%5").arg(username, password, ipAddress).arg(port).arg(rtspPath);
+                externalRtspUrl = QString("rtsp://%1:%2@[EXTERNAL_IP]:%3%4").arg(username, password).arg(externalPort).arg(rtspPath);
+            } else if (!username.isEmpty()) {
+                localRtspUrl = QString("rtsp://%1@%2:%3%4").arg(username, ipAddress).arg(port).arg(rtspPath);
+                externalRtspUrl = QString("rtsp://%1@[EXTERNAL_IP]:%2%3").arg(username).arg(externalPort).arg(rtspPath);
+            } else {
+                // Only password (unusual but handled)
+                localRtspUrl = QString("rtsp://:%1@%2:%3%4").arg(password, ipAddress).arg(port).arg(rtspPath);
+                externalRtspUrl = QString("rtsp://:%1@[EXTERNAL_IP]:%2%3").arg(password).arg(externalPort).arg(rtspPath);
+            }
+        } else {
+            // No credentials
+            localRtspUrl = QString("rtsp://%1:%2%3").arg(ipAddress).arg(port).arg(rtspPath);
+            externalRtspUrl = QString("rtsp://[EXTERNAL_IP]:%1%2").arg(externalPort).arg(rtspPath);
+        }
+        
+        m_mainRtspLabel->setText(localRtspUrl);
+        m_externalRtspLabel->setText(externalRtspUrl);
+        
+        // Populate alternative RTSP paths
+        populateAlternativePaths(username, password, ipAddress, port, brand);
+    }
+    
+    void populateAlternativePaths(const QString& username, const QString& password, 
+                                  const QString& ipAddress, int port, const QString& brand)
+    {
+        m_alternativeUrlsList->clear();
+        
+        QStringList alternativePaths;
+        
+        if (brand == "Hikvision") {
+            alternativePaths << "/Streaming/Channels/102" << "/h264_stream" << "/ch1/main/av_stream";
+        } else if (brand == "CP Plus") {
+            alternativePaths << "/cam/realmonitor?channel=1&subtype=1" << "/streaming/channels/1" << "/stream1";
+        } else if (brand == "Dahua") {
+            alternativePaths << "/cam/realmonitor?channel=1&subtype=1" << "/streaming/channels/1" << "/stream1";
+        } else if (brand == "Axis") {
+            alternativePaths << "/mjpg/video.mjpg" << "/axis-media/media.amp?resolution=640x480";
+        } else if (brand == "Foscam") {
+            alternativePaths << "/videoSub" << "/mjpeg_stream";
+        } else {
+            alternativePaths << "/live" << "/video1" << "/cam1" << "/h264" << "/mjpeg";
+        }
+        
+        for (const QString& path : alternativePaths) {
+            QString url;
+            if (!username.isEmpty() && !password.isEmpty()) {
+                url = QString("rtsp://%1:%2@%3:%4%5").arg(username, password, ipAddress).arg(port).arg(path);
+            } else if (!username.isEmpty()) {
+                url = QString("rtsp://%1@%2:%3%4").arg(username, ipAddress).arg(port).arg(path);
+            } else if (!password.isEmpty()) {
+                url = QString("rtsp://:%1@%2:%3%4").arg(password, ipAddress).arg(port).arg(path);
+            } else {
+                url = QString("rtsp://%1:%2%3").arg(ipAddress).arg(port).arg(path);
+            }
+            
+            QListWidgetItem* item = new QListWidgetItem(url);
+            item->setToolTip("Double-click to copy this URL");
+            m_alternativeUrlsList->addItem(item);
+        }
+    }
+    
+    QString generateCredentialInfo()
+    {
+        QString username = m_camera.username();
+        QString password = m_camera.password();
+        
+        if (username.isEmpty() && password.isEmpty()) {
+            return "No authentication";
+        } else if (!username.isEmpty() && !password.isEmpty()) {
+            return QString("Username: %1, Password: %2").arg(username, QString("*").repeated(password.length()));
+        } else if (!username.isEmpty()) {
+            return QString("Username: %1, No password").arg(username);
+        } else {
+            return QString("No username, Password: %1").arg(QString("*").repeated(password.length()));
+        }
+    }
+    
+    void showCopyMessage(const QString& message)
+    {
+        QLabel* statusLabel = new QLabel(message, this);
+        statusLabel->setStyleSheet("QLabel { background-color: #d4edda; color: #155724; padding: 5px; border: 1px solid #c3e6cb; border-radius: 4px; }");
+        statusLabel->setAlignment(Qt::AlignCenter);
+        statusLabel->setAttribute(Qt::WA_DeleteOnClose);
+        
+        // Position at bottom of dialog temporarily
+        statusLabel->setParent(this);
+        statusLabel->setGeometry(10, height() - 40, width() - 20, 30);
+        statusLabel->show();
+        
+        // Auto-hide after 2 seconds
+        QTimer::singleShot(2000, statusLabel, &QLabel::deleteLater);
+    }
+
+private:
+    CameraConfig m_camera;
+    QLabel* m_mainRtspLabel;
+    QLabel* m_externalRtspLabel;
+    QListWidget* m_alternativeUrlsList;
 };
 
 // Camera Discovery Dialog
@@ -628,6 +1155,26 @@ void MainWindow::editCamera()
     }
 }
 
+void MainWindow::showCameraInfo()
+{
+    int row = m_cameraTable->currentRow();
+    if (row < 0) return;
+    
+    QTableWidgetItem* idItem = m_cameraTable->item(row, 0);
+    if (!idItem) return;
+    
+    QString cameraId = idItem->data(Qt::UserRole).toString();
+    CameraConfig camera = ConfigManager::instance().getCamera(cameraId);
+    
+    if (camera.id().isEmpty()) {
+        QMessageBox::warning(this, "Error", "Camera not found");
+        return;
+    }
+    
+    CameraInfoDialog dialog(camera, this);
+    dialog.exec();
+}
+
 void MainWindow::removeCamera()
 {
     int row = m_cameraTable->currentRow();
@@ -898,7 +1445,7 @@ void MainWindow::setupConnections()
     connect(m_cameraTable, &QTableWidget::itemSelectionChanged,
             this, &MainWindow::onCameraSelectionChanged);
     connect(m_cameraTable, &QTableWidget::itemDoubleClicked,
-            this, &MainWindow::editCamera);      // Camera buttons
+            this, &MainWindow::showCameraInfo);// Camera buttons
     connect(m_addButton, &QPushButton::clicked, this, &MainWindow::addCamera);
     connect(m_discoverButton, &QPushButton::clicked, this, &MainWindow::discoverCameras);
     connect(m_editButton, &QPushButton::clicked, this, &MainWindow::editCamera);

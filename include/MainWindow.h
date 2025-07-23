@@ -39,10 +39,14 @@ protected:
     void closeEvent(QCloseEvent *event) override;
     void changeEvent(QEvent *event) override;
 
+public slots:
+    void editCamera();
+    void testCamera();
+
 private slots:
     void addCamera();
     void discoverCameras();
-    void editCamera();
+    void showCameraInfo();
     void removeCamera();
     void toggleCamera();
     void startAllCameras();
@@ -55,7 +59,6 @@ private slots:
     void onCameraError(const QString& id, const QString& error);
     void onConfigurationChanged();
     void onLogMessage(const QString& message);
-    void testCamera();
     void onPingFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
