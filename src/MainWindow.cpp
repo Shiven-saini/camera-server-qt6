@@ -2,6 +2,7 @@
 #include "ConfigManager.h"
 #include "Logger.h"
 #include "WindowsService.h"
+#include "CameraDiscovery.h"
 #include <QApplication>
 #include <QMenuBar>
 #include <QStatusBar>
@@ -27,6 +28,11 @@
 #include <QSpinBox>
 #include <QTimer>
 #include <QProcess>
+#include <QProgressBar>
+#include <QComboBox>
+#include <QListWidget>
+
+Q_DECLARE_METATYPE(DiscoveredCamera)
 
 // Camera Configuration Dialog
 class CameraConfigDialog : public QDialog
@@ -59,8 +65,7 @@ private slots:
         }
     }
 
-private:
-    void setupUI()
+private:    void setupUI()
     {
         QFormLayout* layout = new QFormLayout(this);
         
@@ -69,6 +74,12 @@ private:
         m_portSpinBox = new QSpinBox(this);
         m_portSpinBox->setRange(1, 65535);
         m_portSpinBox->setValue(554);
+        
+        m_brandComboBox = new QComboBox(this);
+        m_brandComboBox->addItems({"Generic", "Hikvision", "CP Plus", "Dahua", "Axis", "Vivotek", "Foscam"});
+        m_brandComboBox->setCurrentText("Generic");
+        
+        m_modelEdit = new QLineEdit(this);
         
         m_usernameEdit = new QLineEdit(this);
         m_passwordEdit = new QLineEdit(this);
@@ -80,6 +91,8 @@ private:
         layout->addRow("Camera Name:", m_nameEdit);
         layout->addRow("IP Address:", m_ipEdit);
         layout->addRow("Port:", m_portSpinBox);
+        layout->addRow("Brand:", m_brandComboBox);
+        layout->addRow("Model:", m_modelEdit);
         layout->addRow("Username:", m_usernameEdit);
         layout->addRow("Password:", m_passwordEdit);
         layout->addRow("Enabled:", m_enabledCheckBox);
@@ -91,12 +104,13 @@ private:
         
         layout->addRow(buttonBox);
     }
-    
-    void loadCamera()
+      void loadCamera()
     {
         m_nameEdit->setText(m_camera.name());
         m_ipEdit->setText(m_camera.ipAddress());
         m_portSpinBox->setValue(m_camera.port() > 0 ? m_camera.port() : 554);
+        m_brandComboBox->setCurrentText(m_camera.brand().isEmpty() ? "Generic" : m_camera.brand());
+        m_modelEdit->setText(m_camera.model());
         m_usernameEdit->setText(m_camera.username());
         m_passwordEdit->setText(m_camera.password());
         m_enabledCheckBox->setChecked(m_camera.isEnabled());
@@ -107,18 +121,269 @@ private:
         m_camera.setName(m_nameEdit->text().trimmed());
         m_camera.setIpAddress(m_ipEdit->text().trimmed());
         m_camera.setPort(m_portSpinBox->value());
+        m_camera.setBrand(m_brandComboBox->currentText());
+        m_camera.setModel(m_modelEdit->text().trimmed());
         m_camera.setUsername(m_usernameEdit->text().trimmed());
         m_camera.setPassword(m_passwordEdit->text());
         m_camera.setEnabled(m_enabledCheckBox->isChecked());
     }
-    
-    CameraConfig m_camera;
+      CameraConfig m_camera;
     QLineEdit* m_nameEdit;
     QLineEdit* m_ipEdit;
     QSpinBox* m_portSpinBox;
+    QComboBox* m_brandComboBox;
+    QLineEdit* m_modelEdit;
     QLineEdit* m_usernameEdit;
     QLineEdit* m_passwordEdit;
     QCheckBox* m_enabledCheckBox;
+};
+
+// Camera Discovery Dialog
+class CameraDiscoveryDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+    explicit CameraDiscoveryDialog(QWidget *parent = nullptr)
+        : QDialog(parent)
+        , m_discovery(nullptr)
+        , m_isScanning(false)
+    {
+        setWindowTitle("Discover Cameras");
+        setModal(true);
+        resize(800, 600);
+        
+        setupUI();
+        setupDiscovery();
+    }
+    
+    QList<DiscoveredCamera> getSelectedCameras() const { return m_selectedCameras; }
+
+private slots:
+    void startDiscovery()
+    {
+        if (m_isScanning) return;
+        
+        m_isScanning = true;
+        m_discoveredCamerasWidget->clear();
+        m_selectedCameras.clear();
+        m_progressBar->setValue(0);
+        m_progressBar->setVisible(true);
+        m_statusLabel->setText("Scanning network for cameras...");
+        m_scanButton->setText("Stop Scan");
+        m_scanButton->setEnabled(true);
+        
+        QString networkRange = m_networkEdit->text().trimmed();
+        if (networkRange.isEmpty()) {
+            networkRange = CameraDiscovery::detectNetworkRange();
+            m_networkEdit->setText(networkRange);
+        }
+        
+        m_discovery->startDiscovery(networkRange);
+    }
+    
+    void stopDiscovery()
+    {
+        if (!m_isScanning) return;
+        
+        m_discovery->stopDiscovery();
+        m_isScanning = false;
+        m_progressBar->setVisible(false);
+        m_statusLabel->setText("Scan stopped");
+        m_scanButton->setText("Start Scan");
+    }
+    
+    void onDiscoveryStarted()
+    {
+        m_isScanning = true;
+        m_statusLabel->setText("Scanning network...");
+    }
+    
+    void onDiscoveryFinished()
+    {
+        m_isScanning = false;
+        m_progressBar->setVisible(false);
+        m_statusLabel->setText(QString("Scan completed. Found %1 cameras.").arg(m_discoveredCamerasWidget->count()));
+        m_scanButton->setText("Start Scan");
+        m_scanButton->setEnabled(true);
+    }
+    
+    void onDiscoveryProgress(int current, int total)
+    {
+        if (total > 0) {
+            int percentage = (current * 100) / total;
+            m_progressBar->setValue(percentage);
+            m_statusLabel->setText(QString("Scanning... %1/%2 (%3%)")
+                                   .arg(current).arg(total).arg(percentage));
+        }
+    }
+    
+    void onCameraDiscovered(const DiscoveredCamera& camera)
+    {
+        addCameraToList(camera);
+    }
+    
+    void onSelectionChanged()
+    {
+        m_selectedCameras.clear();
+        
+        for (int i = 0; i < m_discoveredCamerasWidget->count(); ++i) {
+            QListWidgetItem* item = m_discoveredCamerasWidget->item(i);
+            if (item->checkState() == Qt::Checked) {
+                DiscoveredCamera camera = item->data(Qt::UserRole).value<DiscoveredCamera>();
+                m_selectedCameras.append(camera);
+            }
+        }
+        
+        m_addSelectedButton->setEnabled(!m_selectedCameras.isEmpty());
+        m_selectedCountLabel->setText(QString("Selected: %1").arg(m_selectedCameras.size()));
+    }
+    
+    void onAddSelected()
+    {
+        accept();
+    }
+    
+    void onItemDoubleClicked(QListWidgetItem* item)
+    {
+        if (item) {
+            // Toggle selection on double-click
+            Qt::CheckState newState = (item->checkState() == Qt::Checked) ? Qt::Unchecked : Qt::Checked;
+            item->setCheckState(newState);
+        }
+    }
+
+private:
+    void setupUI()
+    {
+        QVBoxLayout* mainLayout = new QVBoxLayout(this);
+        
+        // Network configuration
+        QGroupBox* networkGroup = new QGroupBox("Network Configuration");
+        QFormLayout* networkLayout = new QFormLayout(networkGroup);
+        
+        m_networkEdit = new QLineEdit(this);
+        m_networkEdit->setText(CameraDiscovery::detectNetworkRange());
+        m_networkEdit->setPlaceholderText("e.g., 192.168.1.0/24");
+        networkLayout->addRow("Network Range:", m_networkEdit);
+        
+        mainLayout->addWidget(networkGroup);
+        
+        // Control buttons
+        QHBoxLayout* controlLayout = new QHBoxLayout;
+        m_scanButton = new QPushButton("Start Scan", this);
+        connect(m_scanButton, &QPushButton::clicked, this, [this]() {
+            if (m_isScanning) {
+                stopDiscovery();
+            } else {
+                startDiscovery();
+            }
+        });
+        controlLayout->addWidget(m_scanButton);
+        
+        m_statusLabel = new QLabel("Ready to scan", this);
+        controlLayout->addWidget(m_statusLabel);
+        controlLayout->addStretch();
+        
+        m_progressBar = new QProgressBar(this);
+        m_progressBar->setVisible(false);
+        controlLayout->addWidget(m_progressBar);
+        
+        mainLayout->addLayout(controlLayout);
+        
+        // Discovered cameras
+        QGroupBox* camerasGroup = new QGroupBox("Discovered Cameras");
+        QVBoxLayout* camerasLayout = new QVBoxLayout(camerasGroup);
+        
+        m_discoveredCamerasWidget = new QListWidget(this);
+        m_discoveredCamerasWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        connect(m_discoveredCamerasWidget, &QListWidget::itemChanged, this, &CameraDiscoveryDialog::onSelectionChanged);
+        connect(m_discoveredCamerasWidget, &QListWidget::itemDoubleClicked, this, &CameraDiscoveryDialog::onItemDoubleClicked);
+        camerasLayout->addWidget(m_discoveredCamerasWidget);
+        
+        QHBoxLayout* selectionLayout = new QHBoxLayout;
+        m_selectedCountLabel = new QLabel("Selected: 0", this);
+        selectionLayout->addWidget(m_selectedCountLabel);
+        selectionLayout->addStretch();
+        camerasLayout->addLayout(selectionLayout);
+        
+        mainLayout->addWidget(camerasGroup);
+        
+        // Dialog buttons
+        QHBoxLayout* buttonLayout = new QHBoxLayout;
+        m_addSelectedButton = new QPushButton("Add Selected Cameras", this);
+        m_addSelectedButton->setEnabled(false);
+        connect(m_addSelectedButton, &QPushButton::clicked, this, &CameraDiscoveryDialog::onAddSelected);
+        buttonLayout->addWidget(m_addSelectedButton);
+        
+        QPushButton* cancelButton = new QPushButton("Cancel", this);
+        connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
+        buttonLayout->addWidget(cancelButton);
+        
+        mainLayout->addLayout(buttonLayout);
+    }
+    
+    void setupDiscovery()
+    {
+        m_discovery = new CameraDiscovery(this);
+        
+        connect(m_discovery, &CameraDiscovery::discoveryStarted, this, &CameraDiscoveryDialog::onDiscoveryStarted);
+        connect(m_discovery, &CameraDiscovery::discoveryFinished, this, &CameraDiscoveryDialog::onDiscoveryFinished);
+        connect(m_discovery, &CameraDiscovery::discoveryProgress, this, &CameraDiscoveryDialog::onDiscoveryProgress);
+        connect(m_discovery, &CameraDiscovery::cameraDiscovered, this, &CameraDiscoveryDialog::onCameraDiscovered);
+    }
+    
+    void addCameraToList(const DiscoveredCamera& camera)
+    {
+        QListWidgetItem* item = new QListWidgetItem(m_discoveredCamerasWidget);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState(Qt::Unchecked);
+        
+        // Create display text with brand, IP, and model info
+        QString displayText = QString("[%1] %2:%3")
+                              .arg(camera.brand, camera.ipAddress).arg(camera.port);
+        
+        if (!camera.model.isEmpty() && camera.model != "Unknown") {
+            displayText += QString(" - %1").arg(camera.model);
+        }
+        
+        if (!camera.deviceName.isEmpty()) {
+            displayText += QString(" (%1)").arg(camera.deviceName);
+        }
+        
+        // Add RTSP URL hint
+        displayText += QString("\nRTSP: %1").arg(camera.rtspUrl);
+        
+        item->setText(displayText);
+        
+        // Set icon based on brand
+        if (camera.brand == "Hikvision") {
+            item->setBackground(QColor(230, 250, 230)); // Light green
+        } else if (camera.brand == "CP Plus") {
+            item->setBackground(QColor(230, 230, 250)); // Light blue
+        } else {
+            item->setBackground(QColor(250, 250, 230)); // Light yellow for generic
+        }
+        
+        // Store camera data
+        item->setData(Qt::UserRole, QVariant::fromValue(camera));
+        
+        m_discoveredCamerasWidget->addItem(item);
+    }
+
+private:
+    CameraDiscovery* m_discovery;
+    bool m_isScanning;
+    QList<DiscoveredCamera> m_selectedCameras;
+    
+    // UI elements
+    QLineEdit* m_networkEdit;
+    QPushButton* m_scanButton;
+    QLabel* m_statusLabel;
+    QProgressBar* m_progressBar;
+    QListWidget* m_discoveredCamerasWidget;
+    QLabel* m_selectedCountLabel;
+    QPushButton* m_addSelectedButton;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -262,6 +527,76 @@ void MainWindow::addCamera()
             showMessage(QString("Camera '%1' added successfully").arg(camera.name()));
         } else {
             QMessageBox::warning(this, "Error", "Failed to add camera");
+        }
+    }
+}
+
+void MainWindow::discoverCameras()
+{
+    CameraDiscoveryDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QList<DiscoveredCamera> selectedCameras = dialog.getSelectedCameras();
+        
+        if (selectedCameras.isEmpty()) {
+            showMessage("No cameras selected");
+            return;
+        }
+        
+        int addedCount = 0;
+        for (const DiscoveredCamera& discoveredCamera : selectedCameras) {
+            // Create CameraConfig from DiscoveredCamera
+            CameraConfig camera;
+            
+            // Generate a name based on brand and IP
+            QString cameraName = QString("%1_Camera_%2")
+                                .arg(discoveredCamera.brand)
+                                .arg(discoveredCamera.ipAddress.split('.').last());
+            
+            if (!discoveredCamera.deviceName.isEmpty() && 
+                discoveredCamera.deviceName != cameraName) {
+                cameraName = discoveredCamera.deviceName;
+            }
+            
+            camera.setName(cameraName);
+            camera.setIpAddress(discoveredCamera.ipAddress);
+            camera.setPort(discoveredCamera.port == 80 ? 554 : discoveredCamera.port); // Default to RTSP port
+            camera.setBrand(discoveredCamera.brand);
+            camera.setModel(discoveredCamera.model);
+            camera.setEnabled(true);
+            
+            // Set default credentials based on brand
+            if (discoveredCamera.brand == "Hikvision") {
+                camera.setUsername("admin");
+                camera.setPassword("admin");
+            } else if (discoveredCamera.brand == "CP Plus") {
+                camera.setUsername("admin");
+                camera.setPassword("admin");
+            } else {
+                camera.setUsername("admin");
+                camera.setPassword("");
+            }
+            
+            if (m_cameraManager->addCamera(camera)) {
+                addedCount++;
+                LOG_INFO(QString("Added discovered camera: %1 [%2] at %3")
+                         .arg(camera.name(), camera.brand(), camera.ipAddress()), "MainWindow");
+            } else {
+                LOG_WARNING(QString("Failed to add discovered camera: %1 at %2")
+                           .arg(cameraName, discoveredCamera.ipAddress), "MainWindow");
+            }
+        }
+        
+        showMessage(QString("Added %1 of %2 discovered cameras").arg(addedCount).arg(selectedCameras.size()));
+        
+        if (addedCount > 0) {
+            // Show a message with RTSP URL information
+            QString rtspInfo = "Discovered cameras have been added with suggested RTSP URLs:\n\n";
+            for (const DiscoveredCamera& cam : selectedCameras) {
+                rtspInfo += QString("• %1: %2\n").arg(cam.brand, cam.rtspUrl);
+            }
+            rtspInfo += "\nYou may need to adjust usernames, passwords, and RTSP paths for your specific cameras.";
+            
+            QMessageBox::information(this, "Camera Discovery Complete", rtspInfo);
         }
     }
 }
@@ -473,25 +808,25 @@ void MainWindow::createCentralWidget()
     
     // Camera management group
     m_cameraGroupBox = new QGroupBox("Camera Configuration");
-    QVBoxLayout* cameraLayout = new QVBoxLayout(m_cameraGroupBox);
-      // Camera table
-    m_cameraTable = new QTableWidget(0, 7);
-    QStringList headers = {"#", "Name", "IP Address", "Port", "External Port", "Status", "Test"};
+    QVBoxLayout* cameraLayout = new QVBoxLayout(m_cameraGroupBox);      // Camera table
+    m_cameraTable = new QTableWidget(0, 9);
+    QStringList headers = {"#", "Name", "Brand", "Model", "IP Address", "Port", "External Port", "Status", "Test"};
     m_cameraTable->setHorizontalHeaderLabels(headers);
     m_cameraTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_cameraTable->setAlternatingRowColors(true);
     m_cameraTable->horizontalHeader()->setStretchLastSection(true);
     
-    cameraLayout->addWidget(m_cameraTable);
-      // Camera buttons
+    cameraLayout->addWidget(m_cameraTable);      // Camera buttons
     QHBoxLayout* cameraButtonLayout = new QHBoxLayout;
     m_addButton = new QPushButton("Add Camera");
+    m_discoverButton = new QPushButton("Discover Cameras");
     m_editButton = new QPushButton("Edit Camera");
     m_removeButton = new QPushButton("Remove Camera");
     m_toggleButton = new QPushButton("Start/Stop");
     m_testButton = new QPushButton("Test Camera");
     
     cameraButtonLayout->addWidget(m_addButton);
+    cameraButtonLayout->addWidget(m_discoverButton);
     cameraButtonLayout->addWidget(m_editButton);
     cameraButtonLayout->addWidget(m_removeButton);
     cameraButtonLayout->addWidget(m_toggleButton);
@@ -563,9 +898,9 @@ void MainWindow::setupConnections()
     connect(m_cameraTable, &QTableWidget::itemSelectionChanged,
             this, &MainWindow::onCameraSelectionChanged);
     connect(m_cameraTable, &QTableWidget::itemDoubleClicked,
-            this, &MainWindow::editCamera);
-      // Camera buttons
+            this, &MainWindow::editCamera);      // Camera buttons
     connect(m_addButton, &QPushButton::clicked, this, &MainWindow::addCamera);
+    connect(m_discoverButton, &QPushButton::clicked, this, &MainWindow::discoverCameras);
     connect(m_editButton, &QPushButton::clicked, this, &MainWindow::editCamera);
     connect(m_removeButton, &QPushButton::clicked, this, &MainWindow::removeCamera);
     connect(m_toggleButton, &QPushButton::clicked, this, &MainWindow::toggleCamera);
@@ -608,14 +943,28 @@ void MainWindow::updateCameraTable()
         // Name
         m_cameraTable->setItem(i, 1, new QTableWidgetItem(camera.name()));
         
+        // Brand
+        QTableWidgetItem* brandItem = new QTableWidgetItem(camera.brand());
+        if (camera.brand() == "Hikvision") {
+            brandItem->setBackground(QColor(230, 250, 230)); // Light green
+        } else if (camera.brand() == "CP Plus") {
+            brandItem->setBackground(QColor(230, 230, 250)); // Light blue
+        } else if (camera.brand() == "Generic") {
+            brandItem->setBackground(QColor(250, 250, 230)); // Light yellow
+        }
+        m_cameraTable->setItem(i, 2, brandItem);
+        
+        // Model
+        m_cameraTable->setItem(i, 3, new QTableWidgetItem(camera.model().isEmpty() ? "Unknown" : camera.model()));
+        
         // IP Address
-        m_cameraTable->setItem(i, 2, new QTableWidgetItem(camera.ipAddress()));
+        m_cameraTable->setItem(i, 4, new QTableWidgetItem(camera.ipAddress()));
         
         // Port
-        m_cameraTable->setItem(i, 3, new QTableWidgetItem(QString::number(camera.port())));
+        m_cameraTable->setItem(i, 5, new QTableWidgetItem(QString::number(camera.port())));
         
         // External Port
-        m_cameraTable->setItem(i, 4, new QTableWidgetItem(QString::number(camera.externalPort())));
+        m_cameraTable->setItem(i, 6, new QTableWidgetItem(QString::number(camera.externalPort())));
         
         // Status
         bool isRunning = m_cameraManager->isCameraRunning(camera.id());
@@ -636,13 +985,13 @@ void MainWindow::updateCameraTable()
         } else {
             statusItem->setBackground(QColor(255, 182, 193)); // Light red
         }
-          m_cameraTable->setItem(i, 5, statusItem);
+        m_cameraTable->setItem(i, 7, statusItem);
         
         // Test column - shows connectivity status
         QTableWidgetItem* testItem = new QTableWidgetItem("Click Test");
         testItem->setTextAlignment(Qt::AlignCenter);
         testItem->setBackground(QColor(240, 240, 240)); // Light gray
-        m_cameraTable->setItem(i, 6, testItem);
+        m_cameraTable->setItem(i, 8, testItem);
     }
     
     // Resize columns to content
@@ -711,8 +1060,8 @@ void MainWindow::testCamera()
     if (row < 0) return;
     
     QTableWidgetItem* idItem = m_cameraTable->item(row, 0);
-    QTableWidgetItem* ipItem = m_cameraTable->item(row, 2);
-    QTableWidgetItem* testItem = m_cameraTable->item(row, 6);
+    QTableWidgetItem* ipItem = m_cameraTable->item(row, 4);  // IP Address column
+    QTableWidgetItem* testItem = m_cameraTable->item(row, 8); // Test column
     
     if (!idItem || !ipItem || !testItem) return;
     
@@ -770,10 +1119,9 @@ void MainWindow::onPingFinished(int exitCode, QProcess::ExitStatus exitStatus)
             break;
         }
     }
-    
-    if (testRow >= 0) {
-        QTableWidgetItem* testItem = m_cameraTable->item(testRow, 6);
-        QTableWidgetItem* ipItem = m_cameraTable->item(testRow, 2);
+      if (testRow >= 0) {
+        QTableWidgetItem* testItem = m_cameraTable->item(testRow, 8); // Test column
+        QTableWidgetItem* ipItem = m_cameraTable->item(testRow, 4);   // IP Address column
         
         if (testItem && ipItem) {
             QString ipAddress = ipItem->text();

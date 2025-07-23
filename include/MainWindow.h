@@ -41,6 +41,7 @@ protected:
 
 private slots:
     void addCamera();
+    void discoverCameras();
     void editCamera();
     void removeCamera();
     void toggleCamera();
@@ -70,11 +71,11 @@ private:
     // UI Components
     QSplitter* m_mainSplitter;
     QWidget* m_centralWidget;
-    
-    // Camera management
+      // Camera management
     QGroupBox* m_cameraGroupBox;
     QTableWidget* m_cameraTable;
     QPushButton* m_addButton;
+    QPushButton* m_discoverButton;
     QPushButton* m_editButton;
     QPushButton* m_removeButton;
     QPushButton* m_toggleButton;

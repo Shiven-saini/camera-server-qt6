@@ -7,6 +7,7 @@ CameraConfig::CameraConfig()
     : m_port(554)
     , m_enabled(true)
     , m_externalPort(8551)
+    , m_brand("Generic")
 {
     m_id = QUuid::createUuid().toString(QUuid::WithoutBraces);
 }
@@ -20,6 +21,7 @@ CameraConfig::CameraConfig(const QString& name, const QString& ipAddress, int po
     , m_password(password)
     , m_enabled(enabled)
     , m_externalPort(8551)
+    , m_brand("Generic")
 {
     m_id = QUuid::createUuid().toString(QUuid::WithoutBraces);
 }
@@ -35,6 +37,8 @@ QJsonObject CameraConfig::toJson() const
     json["password"] = m_password;
     json["enabled"] = m_enabled;
     json["externalPort"] = m_externalPort;
+    json["brand"] = m_brand;
+    json["model"] = m_model;
     return json;
 }
 
@@ -48,6 +52,8 @@ void CameraConfig::fromJson(const QJsonObject& json)
     m_password = json["password"].toString();
     m_enabled = json["enabled"].toBool(true);
     m_externalPort = json["externalPort"].toInt(8551);
+    m_brand = json["brand"].toString("Generic");
+    m_model = json["model"].toString();
     
     // Generate ID if not present (for backward compatibility)
     if (m_id.isEmpty()) {

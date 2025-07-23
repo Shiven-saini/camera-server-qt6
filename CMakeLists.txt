@@ -72,6 +72,7 @@ set(SOURCES
     src/SystemTrayManager.cpp
     src/Logger.cpp
     src/ConfigManager.cpp
+    src/CameraDiscovery.cpp
 )
 
 # Header files
@@ -84,6 +85,7 @@ set(HEADERS
     include/SystemTrayManager.h
     include/Logger.h
     include/ConfigManager.h
+    include/CameraDiscovery.h
 )
 
 # Resource files
