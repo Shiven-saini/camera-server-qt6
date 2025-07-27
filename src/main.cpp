@@ -3,14 +3,47 @@
 #include <QSystemTrayIcon>
 #include <QDir>
 #include <QStandardPaths>
+#include <windows.h>
 
 #include "MainWindow.h"
 #include "ConfigManager.h"
 #include "Logger.h"
 #include "WindowsService.h"
 
+// Forward declaration for WireGuard service function
+extern "C" {
+    typedef bool (*WireGuardTunnelServiceFunc)(const wchar_t* configFile);
+}
+
 int main(int argc, char *argv[])
 {
+    // Check for WireGuard service mode first (before creating QApplication)
+    if (argc == 3 && QString::fromLocal8Bit(argv[1]) == "/service") {
+        // This is a WireGuard tunnel service call
+        QString configPath = QString::fromLocal8Bit(argv[2]);
+        
+        // Load tunnel.dll and call WireGuardTunnelService
+        HMODULE tunnelDll = LoadLibraryA("tunnel.dll");
+        if (!tunnelDll) {
+            return 1;  // Failed to load tunnel.dll
+        }
+        
+        WireGuardTunnelServiceFunc tunnelServiceFunc = 
+            (WireGuardTunnelServiceFunc)GetProcAddress(tunnelDll, "WireGuardTunnelService");
+        
+        if (!tunnelServiceFunc) {
+            FreeLibrary(tunnelDll);
+            return 1;  // Failed to get function
+        }
+        
+        // Convert to wide string and call the function
+        std::wstring wideConfigPath = configPath.toStdWString();
+        bool result = tunnelServiceFunc(wideConfigPath.c_str());
+        
+        FreeLibrary(tunnelDll);
+        return result ? 0 : 1;
+    }
+    
     QApplication app(argc, argv);
     
     // Set application properties

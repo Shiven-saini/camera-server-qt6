@@ -18,6 +18,7 @@
 #include <QTimer>
 #include "CameraManager.h"
 #include "SystemTrayManager.h"
+#include "VpnWidget.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -90,11 +91,13 @@ private:
     QPushButton* m_stopAllButton;
     QCheckBox* m_autoStartCheckBox;
     QLabel* m_serviceStatusLabel;
-    
-    // Log viewer
+      // Log viewer
     QGroupBox* m_logGroupBox;
     QTextEdit* m_logTextEdit;
     QPushButton* m_clearLogButton;
+    
+    // VPN Widget
+    VpnWidget* m_vpnWidget;
     
     // Menu and actions
     QMenu* m_fileMenu;

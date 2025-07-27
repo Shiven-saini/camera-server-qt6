@@ -10,6 +10,9 @@ This application enables IP camera access across VPN networks by providing TCP p
 
 - **RTSP Port Forwarding**: TCP port forwarding from external ports to IP camera RTSP streams (default port 554)
 - **Camera Management**: Add, edit, remove, and configure IP cameras with authentication support
+- **WireGuard VPN Integration**: Built-in VPN functionality using WireGuard technology for secure camera access
+- **VPN Configuration Management**: Create, edit, and manage multiple VPN profiles with GUI interface
+- **Real-time VPN Monitoring**: Connection status, transfer statistics, and uptime tracking
 - **Auto-start Support**: Option to start with Windows automatically
 - **System Tray Integration**: Minimize to system tray with quick access controls
 - **Windows Service**: Can run as a background Windows service
@@ -38,49 +41,81 @@ Device A -> 10.0.0.2:8553 -> Device B -> 192.168.1.202:554 (Camera 3)
 - **Build Tools**: CMake 3.16 or later
 - **Compiler**: Visual Studio 2019/2022 or MinGW-w64
 - **Network**: VPN connection with P2P capability
+- **For VPN Features**: Administrator privileges and WireGuard DLLs (tunnel.dll, wireguard.dll)
 
 ## Installation & Setup
 
-### Step 1: Install Qt6
+### Quick Build (Recommended)
+
+The easiest way to build the project is using the comprehensive build script:
+
+```batch
+build.bat
+```
+
+This single command will:
+1. **Detect Qt 6.5.3** installation automatically from common locations
+2. **Set up environment** variables and compiler paths
+3. **Configure CMake** with the appropriate generator
+4. **Build the project** in Release mode
+5. **Provide detailed feedback** and troubleshooting information
+
+The script supports:
+- Multiple Qt installation paths
+- Both MinGW and Visual Studio compilers  
+- Automatic environment detection
+- Registry-based Qt discovery
+- Comprehensive error reporting
+
+### Manual Build (Alternative)
+
+If you prefer step-by-step control:
+
+#### Step 1: Install Qt6
 
 1. Download Qt6 from [Qt Official Website](https://www.qt.io/download-qt-installer)
 2. Install Qt 6.5.3 or later with the following components:
    - Qt6 Core, Widgets, and Network modules
    - CMake support
-   - Your preferred compiler (MSVC 2019/2022 recommended)
+   - Your preferred compiler (MSVC 2019/2022 or MinGW recommended)
 
-### Step 2: Setup Environment
+#### Step 2: Setup Environment
 
 Run the setup script to configure your environment:
 ```batch
 setup.bat
 ```
 
-This will:
-- Check for Qt6 installation
-- Set up environment variables
-- Provide installation guidance if Qt6 is not found
-
-### Step 3: Configure Build
+#### Step 3: Configure Build
 
 ```batch
 configure.bat
 ```
 
-This will:
-- Create build directory
-- Run CMake configuration
-- Verify Qt6 dependencies
-
-### Step 4: Build Project
+#### Step 4: Build Project
 
 ```batch
 build.bat
 ```
 
-This will:
-- Compile the application
-- Create the executable in `build/Release/`
+### VPN Setup (Optional but Recommended)
+
+For WireGuard VPN functionality, you need the required DLLs:
+
+```batch
+setup_wireguard_dlls.bat
+```
+
+This script will:
+- Search for existing WireGuard DLLs
+- Help you locate and copy the required files
+- Provide download instructions if needed
+
+Required files:
+- `tunnel.dll` - WireGuard tunnel service
+- `wireguard.dll` - WireGuard driver interface
+
+**Note**: VPN features require Administrator privileges.
 
 ## Usage
 

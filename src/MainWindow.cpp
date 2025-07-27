@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "WindowsService.h"
 #include "CameraDiscovery.h"
+#include "VpnWidget.h"
 #include <QApplication>
 #include <QMenuBar>
 #include <QStatusBar>
@@ -1423,16 +1424,27 @@ void MainWindow::createCentralWidget()
     logButtonLayout->addStretch();
     
     logLayout->addLayout(logButtonLayout);
-    
-    // Add to splitter
+      // Add to splitter
     QWidget* topWidget = new QWidget;
-    QVBoxLayout* topLayout = new QVBoxLayout(topWidget);
-    topLayout->addWidget(m_cameraGroupBox);
-    topLayout->addWidget(m_serviceGroupBox);
+    QHBoxLayout* topMainLayout = new QHBoxLayout(topWidget);
+    
+    // Left side - Camera and Service controls
+    QWidget* leftWidget = new QWidget;
+    QVBoxLayout* leftLayout = new QVBoxLayout(leftWidget);
+    leftLayout->addWidget(m_cameraGroupBox);
+    leftLayout->addWidget(m_serviceGroupBox);
+    
+    // Right side - VPN controls
+    m_vpnWidget = new VpnWidget;
+    m_vpnWidget->setMaximumWidth(300);
+    m_vpnWidget->setMinimumWidth(250);
+    
+    topMainLayout->addWidget(leftWidget, 2);
+    topMainLayout->addWidget(m_vpnWidget, 1);
     
     m_mainSplitter->addWidget(topWidget);
     m_mainSplitter->addWidget(m_logGroupBox);
-    m_mainSplitter->setSizes({400, 200});
+    m_mainSplitter->setSizes({500, 200});
     
     // Main layout
     QVBoxLayout* mainLayout = new QVBoxLayout(m_centralWidget);
@@ -1466,9 +1478,16 @@ void MainWindow::setupConnections()
     connect(m_cameraManager, &CameraManager::cameraError,
             this, &MainWindow::onCameraError);
     connect(m_cameraManager, &CameraManager::configurationChanged,
-            this, &MainWindow::onConfigurationChanged);
-      // Logger
+            this, &MainWindow::onConfigurationChanged);    // Logger
     connect(&Logger::instance(), &Logger::logMessage,
+            this, &MainWindow::onLogMessage);
+    
+    // VPN Widget
+    connect(m_vpnWidget, &VpnWidget::statusChanged,
+            [this](const QString& status) {
+                showMessage(QString("VPN Status: %1").arg(status));
+            });
+    connect(m_vpnWidget, &VpnWidget::logMessage,
             this, &MainWindow::onLogMessage);
 }
 

@@ -73,6 +73,9 @@ set(SOURCES
     src/Logger.cpp
     src/ConfigManager.cpp
     src/CameraDiscovery.cpp
+    src/WireGuardManager.cpp
+    src/WireGuardConfigDialog.cpp
+    src/VpnWidget.cpp
 )
 
 # Header files
@@ -86,6 +89,9 @@ set(HEADERS
     include/Logger.h
     include/ConfigManager.h
     include/CameraDiscovery.h
+    include/WireGuardManager.h
+    include/WireGuardConfigDialog.h
+    include/VpnWidget.h
 )
 
 # Resource files
@@ -101,6 +107,11 @@ add_executable(CameraServerQt6 ${SOURCES} ${HEADERS} ${RESOURCES})
 
 # Link Qt6 libraries
 target_link_libraries(CameraServerQt6 PRIVATE Qt6::Core Qt6::Widgets Qt6::Network)
+
+# Link Windows system libraries for WireGuard integration
+if(WIN32)
+    target_link_libraries(CameraServerQt6 PRIVATE advapi32 ws2_32)
+endif()
 
 # Copy Qt6 DLLs to the output directory using windeployqt (Corrected Version)
 if(WIN32)
@@ -119,6 +130,18 @@ if(WIN32)
         COMMENT "Deploying Qt DLLs to the output directory..."
         VERBATIM
     )
+    
+    # Copy WireGuard DLLs to output directory
+    add_custom_command(TARGET CameraServerQt6 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/tunnel.dll"
+            "${CMAKE_BINARY_DIR}/bin/tunnel.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/wireguard.dll"
+            "${CMAKE_BINARY_DIR}/bin/wireguard.dll"
+        COMMENT "Copying WireGuard DLLs to output directory..."
+        VERBATIM
+    )
 endif()
 
 
@@ -126,11 +149,3 @@ endif()
 set_target_properties(CameraServerQt6 PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
-
-# Copy Qt6 DLLs to the output directory using windeployqt
-if(WIN32)
-    add_custom_command(TARGET CameraServerQt6 POST_BUILD
-        COMMAND ${Qt6_HOST_PATH}/bin/windeployqt.exe $<TARGET_FILE:CameraServerQt6>
-        COMMENT "Deploying Qt DLLs for MinGW..."
-    )
-endif()
