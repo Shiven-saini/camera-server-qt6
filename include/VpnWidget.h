@@ -11,6 +11,8 @@
 #include <QProgressBar>
 #include <QTimer>
 #include <QFrame>
+#include <QProcess>
+#include <QTextEdit>
 #include "WireGuardManager.h"
 
 class VpnWidget : public QWidget
@@ -30,9 +32,11 @@ private slots:
     void onDisconnectClicked();
     void onCreateConfigClicked();
     void onEditConfigClicked();
-    void onDeleteConfigClicked();
-    void onRefreshConfigsClicked();
+    void onDeleteConfigClicked();    void onRefreshConfigsClicked();
     void onConfigSelectionChanged();
+    void onPingTestClicked();
+    void onPingFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void onPingError(QProcess::ProcessError error);
     
     // WireGuard Manager slots
     void onConnectionStatusChanged(WireGuardManager::ConnectionStatus status);
@@ -42,10 +46,10 @@ private slots:
     void onWireGuardLogMessage(const QString& message);
 
 private:
-    void setupUI();
-    void setupConnectionGroup();
+    void setupUI();    void setupConnectionGroup();
     void setupConfigGroup();
     void setupStatusGroup();
+    void setupPingTestGroup();
     void connectSignals();
     void updateUI();
     void updateConnectionStatus();
@@ -76,13 +80,19 @@ private:
     QPushButton* m_editConfigButton;
     QPushButton* m_deleteConfigButton;
     QLabel* m_configCountLabel;
-    
-    // Status group
+      // Status group
     QGroupBox* m_statusGroup;
     QLabel* m_currentConfigLabel;
     QLabel* m_uptimeLabel;
     QLabel* m_transferLabel;
     QProgressBar* m_connectionProgress;
+    
+    // Ping test group
+    QGroupBox* m_pingTestGroup;
+    QPushButton* m_pingTestButton;
+    QLabel* m_pingStatusLabel;
+    QTextEdit* m_pingOutputText;
+    QProcess* m_pingProcess;
     
     // Separator
     QFrame* m_separator;

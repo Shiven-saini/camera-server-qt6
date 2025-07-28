@@ -6,6 +6,9 @@
 #include <QPainter>
 #include <QApplication>
 #include <QStyle>
+#include <QProcess>
+#include <QTextEdit>
+#include <QClipboard>
 
 VpnWidget::VpnWidget(QWidget *parent)
     : QWidget(parent)
@@ -13,6 +16,7 @@ VpnWidget::VpnWidget(QWidget *parent)
     , m_statusUpdateTimer(new QTimer(this))
     , m_lastStatus(WireGuardManager::Disconnected)
     , m_isUpdatingConfigs(false)
+    , m_pingProcess(nullptr)
 {
     setupUI();
     connectSignals();
@@ -29,6 +33,11 @@ VpnWidget::VpnWidget(QWidget *parent)
 
 VpnWidget::~VpnWidget()
 {
+    // Clean up ping process if running
+    if (m_pingProcess && m_pingProcess->state() != QProcess::NotRunning) {
+        m_pingProcess->kill();
+        m_pingProcess->waitForFinished(3000);
+    }
 }
 
 void VpnWidget::onConnectClicked()
@@ -159,6 +168,113 @@ void VpnWidget::onRefreshConfigsClicked()
     emit logMessage("Refreshed VPN configurations list");
 }
 
+void VpnWidget::onPingTestClicked()
+{
+    // Check if we're connected first
+    if (m_wireGuardManager->getConnectionStatus() != WireGuardManager::Connected) {
+        m_pingStatusLabel->setText("Status: Not connected to VPN");
+        m_pingOutputText->setPlainText("Please connect to a VPN configuration first before testing connectivity.");
+        return;
+    }
+    
+    // Check if ping is already running
+    if (m_pingProcess && m_pingProcess->state() != QProcess::NotRunning) {
+        m_pingStatusLabel->setText("Status: Ping test already running...");
+        return;
+    }
+    
+    // Create ping process if not exists
+    if (!m_pingProcess) {
+        m_pingProcess = new QProcess(this);
+        connect(m_pingProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                this, &VpnWidget::onPingFinished);
+        connect(m_pingProcess, &QProcess::errorOccurred,
+                this, &VpnWidget::onPingError);
+    }
+    
+    // Clear previous output
+    m_pingOutputText->clear();
+    m_pingStatusLabel->setText("Status: Testing connectivity to 10.0.0.1...");
+    m_pingTestButton->setEnabled(false);
+    
+    // Start ping command (Windows ping with 4 packets, 1 second timeout)
+    QStringList arguments;
+    arguments << "-n" << "4";  // Send 4 packets
+    arguments << "-w" << "1000";  // 1 second timeout
+    arguments << "10.0.0.1";
+    
+    m_pingProcess->start("ping", arguments);
+    
+    emit logMessage("VPN: Starting ping test to 10.0.0.1");
+}
+
+void VpnWidget::onPingFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    m_pingTestButton->setEnabled(true);
+    
+    if (exitStatus == QProcess::CrashExit) {
+        m_pingStatusLabel->setText("Status: Ping process crashed");
+        m_pingOutputText->append("\n[ERROR] Ping process crashed unexpectedly.");
+        emit logMessage("VPN: Ping test crashed");
+        return;
+    }
+    
+    // Read all output from the ping command
+    QByteArray output = m_pingProcess->readAllStandardOutput();
+    QByteArray errorOutput = m_pingProcess->readAllStandardError();
+    
+    QString outputText = QString::fromLocal8Bit(output);
+    if (!errorOutput.isEmpty()) {
+        outputText += "\n[ERROR OUTPUT]\n" + QString::fromLocal8Bit(errorOutput);
+    }
+    
+    m_pingOutputText->setPlainText(outputText);
+    
+    // Determine success/failure
+    if (exitCode == 0) {
+        m_pingStatusLabel->setText("Status: ✓ Connectivity test successful");
+        m_pingStatusLabel->setStyleSheet("color: #4CAF50; font-weight: bold;");
+        emit logMessage("VPN: Ping test successful - VPN connectivity confirmed");
+    } else {
+        m_pingStatusLabel->setText("Status: ✗ Connectivity test failed");
+        m_pingStatusLabel->setStyleSheet("color: #f44336; font-weight: bold;");
+        emit logMessage("VPN: Ping test failed - VPN connectivity issues detected");
+    }
+}
+
+void VpnWidget::onPingError(QProcess::ProcessError error)
+{
+    m_pingTestButton->setEnabled(true);
+    
+    QString errorText;
+    switch (error) {
+        case QProcess::FailedToStart:
+            errorText = "Failed to start ping command. Make sure ping is available on your system.";
+            break;
+        case QProcess::Crashed:
+            errorText = "Ping process crashed during execution.";
+            break;
+        case QProcess::Timedout:
+            errorText = "Ping process timed out.";
+            break;
+        case QProcess::WriteError:
+            errorText = "Write error occurred while running ping.";
+            break;
+        case QProcess::ReadError:
+            errorText = "Read error occurred while running ping.";
+            break;
+        default:
+            errorText = "Unknown error occurred while running ping.";
+            break;
+    }
+    
+    m_pingStatusLabel->setText("Status: ✗ Ping test error");
+    m_pingStatusLabel->setStyleSheet("color: #f44336; font-weight: bold;");
+    m_pingOutputText->setPlainText(QString("[ERROR] %1").arg(errorText));
+    
+    emit logMessage(QString("VPN: Ping test error - %1").arg(errorText));
+}
+
 void VpnWidget::onConfigSelectionChanged()
 {
     if (!m_isUpdatingConfigs) {
@@ -211,6 +327,7 @@ void VpnWidget::setupUI()
     setupConnectionGroup();
     setupConfigGroup();
     setupStatusGroup();
+    setupPingTestGroup();
     
     // Add stretch to push everything to the top
     m_mainLayout->addStretch();
@@ -321,6 +438,41 @@ void VpnWidget::setupStatusGroup()
     groupLayout->addWidget(m_transferLabel);
 }
 
+void VpnWidget::setupPingTestGroup()
+{
+    m_pingTestGroup = new QGroupBox("Connectivity Test");
+    m_mainLayout->addWidget(m_pingTestGroup);
+    
+    QVBoxLayout* groupLayout = new QVBoxLayout(m_pingTestGroup);
+    
+    // Description and test button
+    QHBoxLayout* testLayout = new QHBoxLayout;
+    QLabel* descLabel = new QLabel("Test VPN connectivity to 10.0.0.1:");
+    testLayout->addWidget(descLabel);
+    
+    testLayout->addStretch();
+    
+    m_pingTestButton = new QPushButton("Run Ping Test");
+    m_pingTestButton->setStyleSheet("QPushButton { background-color: #2196F3; color: white; font-weight: bold; }");
+    m_pingTestButton->setMaximumWidth(120);
+    testLayout->addWidget(m_pingTestButton);
+    
+    groupLayout->addLayout(testLayout);
+    
+    // Status label
+    m_pingStatusLabel = new QLabel("Status: Ready to test");
+    m_pingStatusLabel->setStyleSheet("font-weight: bold;");
+    groupLayout->addWidget(m_pingStatusLabel);
+    
+    // Output text area
+    m_pingOutputText = new QTextEdit;
+    m_pingOutputText->setMaximumHeight(120);
+    m_pingOutputText->setReadOnly(true);
+    m_pingOutputText->setFont(QFont("Consolas", 9));
+    m_pingOutputText->setPlainText("Click 'Run Ping Test' to test VPN connectivity to 10.0.0.1\n\nThis test will send 4 ping packets to verify that your VPN connection\nis working properly and can reach the VPN server's internal network.");
+    groupLayout->addWidget(m_pingOutputText);
+}
+
 void VpnWidget::connectSignals()
 {
     // Connection controls
@@ -334,6 +486,9 @@ void VpnWidget::connectSignals()
     connect(m_createConfigButton, &QPushButton::clicked, this, &VpnWidget::onCreateConfigClicked);
     connect(m_editConfigButton, &QPushButton::clicked, this, &VpnWidget::onEditConfigClicked);
     connect(m_deleteConfigButton, &QPushButton::clicked, this, &VpnWidget::onDeleteConfigClicked);
+    
+    // Ping test
+    connect(m_pingTestButton, &QPushButton::clicked, this, &VpnWidget::onPingTestClicked);
     
     // WireGuard Manager signals
     connect(m_wireGuardManager, &WireGuardManager::connectionStatusChanged,
@@ -354,6 +509,7 @@ void VpnWidget::updateUI()
     QString currentConfig = m_wireGuardManager->getCurrentConfigName();
     bool hasConfigs = m_configCombo->count() > 0;
     bool hasSelection = !m_configCombo->currentText().isEmpty();
+    bool isConnected = (status == WireGuardManager::Connected);
     
     // Update connection controls
     m_connectButton->setEnabled(hasSelection && 
@@ -368,6 +524,19 @@ void VpnWidget::updateUI()
     m_deleteConfigButton->setEnabled(hasSelection && 
                                     (currentConfig != m_configCombo->currentText() || 
                                      status == WireGuardManager::Disconnected));
+    
+    // Update ping test button - only enable when connected
+    bool pingProcessRunning = (m_pingProcess && m_pingProcess->state() != QProcess::NotRunning);
+    m_pingTestButton->setEnabled(isConnected && !pingProcessRunning);
+    
+    // Reset ping status when disconnected
+    if (!isConnected && m_pingStatusLabel) {
+        m_pingStatusLabel->setText("Status: VPN not connected");
+        m_pingStatusLabel->setStyleSheet("font-weight: bold;");
+        if (m_pingOutputText) {
+            m_pingOutputText->setPlainText("Connect to a VPN configuration first to test connectivity.");
+        }
+    }
     
     // Update status display
     QString statusText = getStatusText(status);

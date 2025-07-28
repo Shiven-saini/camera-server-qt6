@@ -1,10 +1,13 @@
 #include "PortForwarder.h"
 #include "Logger.h"
+#include "NetworkInterfaceManager.h"
 #include <QNetworkProxy>
 #include <QTimer>
+#include <QNetworkInterface>
 
 PortForwarder::PortForwarder(QObject *parent)
     : QObject(parent)
+    , m_networkManager(nullptr)
 {
 }
 
@@ -38,12 +41,11 @@ bool PortForwarder::startForwarding(const CameraConfig& camera)
     session->reconnectTimer->setSingleShot(true);
     session->reconnectTimer->setInterval(5000); // 5 seconds
     connect(session->reconnectTimer, &QTimer::timeout, this, &PortForwarder::handleReconnectTimer);
-    
-    // Connect server signals
+      // Connect server signals
     connect(session->server, &QTcpServer::newConnection, this, &PortForwarder::handleNewConnection);
     
-    // Start listening on the external port
-    if (!session->server->listen(QHostAddress::Any, camera.externalPort())) {
+    // Start listening on all interfaces
+    if (!bindToAllInterfaces(session->server, camera.externalPort())) {
         LOG_ERROR(QString("Failed to start listening on port %1: %2")
                   .arg(camera.externalPort())
                   .arg(session->server->errorString()), "PortForwarder");
@@ -355,5 +357,123 @@ void PortForwarder::forwardData(QTcpSocket* from, QTcpSocket* to)
     QByteArray data = from->readAll();
     if (!data.isEmpty()) {
         to->write(data);
+    }
+}
+
+void PortForwarder::setNetworkInterfaceManager(NetworkInterfaceManager* manager)
+{
+    if (m_networkManager) {
+        disconnect(m_networkManager, nullptr, this, nullptr);
+    }
+    
+    m_networkManager = manager;
+    
+    if (m_networkManager) {
+        connect(m_networkManager, &NetworkInterfaceManager::interfacesChanged,
+                this, &PortForwarder::onNetworkInterfacesChanged);
+        connect(m_networkManager, &NetworkInterfaceManager::wireGuardInterfaceStateChanged,
+                this, &PortForwarder::onWireGuardStateChanged);
+    }
+}
+
+NetworkInterfaceManager* PortForwarder::networkInterfaceManager() const
+{
+    return m_networkManager;
+}
+
+bool PortForwarder::bindToAllInterfaces(QTcpServer* server, quint16 port)
+{
+    // First try the standard approach - bind to all interfaces
+    if (server->listen(QHostAddress::Any, port)) {
+        LOG_INFO(QString("Successfully bound to all interfaces (0.0.0.0:%1)").arg(port), "PortForwarder");
+        return true;
+    }
+    
+    LOG_WARNING(QString("Failed to bind to 0.0.0.0:%1, trying specific interfaces").arg(port), "PortForwarder");
+    
+    // If we have a network manager, try to bind to specific interfaces
+    if (m_networkManager) {
+        const auto activeInterfaces = m_networkManager->getActiveInterfaces();
+        const auto addresses = m_networkManager->getAllAddresses();
+        
+        // Try to bind to each active interface address
+        for (const QHostAddress& address : addresses) {
+            if (server->listen(address, port)) {
+                LOG_INFO(QString("Successfully bound to specific interface (%1:%2)")
+                         .arg(address.toString()).arg(port), "PortForwarder");
+                return true;
+            }
+        }
+        
+        // Try WireGuard interface specifically
+        const QHostAddress wgAddress = m_networkManager->getWireGuardAddress();
+        if (!wgAddress.isNull() && server->listen(wgAddress, port)) {
+            LOG_INFO(QString("Successfully bound to WireGuard interface (%1:%2)")
+                     .arg(wgAddress.toString()).arg(port), "PortForwarder");
+            return true;
+        }
+    }
+    
+    // Last resort - try localhost
+    if (server->listen(QHostAddress::LocalHost, port)) {
+        LOG_WARNING(QString("Only bound to localhost (127.0.0.1:%1) - external access limited").arg(port), "PortForwarder");
+        return true;
+    }
+    
+    return false;
+}
+
+void PortForwarder::onNetworkInterfacesChanged()
+{
+    if (m_networkManager) {
+        const QString status = m_networkManager->getInterfaceStatus();
+        LOG_INFO(QString("Network interfaces changed: %1").arg(status), "PortForwarder");
+    }
+    
+    // Consider restarting forwarding if we have active sessions
+    // This is commented out to avoid disruption, but can be enabled if needed
+    // restartAllForwarding();
+}
+
+void PortForwarder::onWireGuardStateChanged(bool active)
+{
+    const QString state = active ? "ACTIVE" : "INACTIVE";
+    LOG_INFO(QString("WireGuard state changed to %1").arg(state), "PortForwarder");
+    
+    if (m_networkManager) {
+        const QHostAddress wgAddress = m_networkManager->getWireGuardAddress();
+        LOG_INFO(QString("WireGuard address: %1").arg(wgAddress.toString()), "PortForwarder");
+    }
+    
+    // Optionally restart all forwarding when WireGuard state changes
+    // This ensures we bind to the new WireGuard interface if it becomes available
+    if (active && !m_sessions.isEmpty()) {
+        LOG_INFO("WireGuard activated - restarting port forwarding to ensure proper binding", "PortForwarder");
+        QTimer::singleShot(1000, this, &PortForwarder::restartAllForwarding); // Small delay to let interface stabilize
+    }
+}
+
+void PortForwarder::restartAllForwarding()
+{
+    if (m_sessions.isEmpty()) return;
+    
+    LOG_INFO("Restarting all port forwarding sessions", "PortForwarder");
+    
+    // Save current camera configurations
+    QList<CameraConfig> cameras;
+    for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+        cameras.append(it.value()->camera);
+    }
+    
+    // Stop all current forwarding
+    stopAllForwarding();
+    
+    // Restart forwarding for each camera
+    for (const CameraConfig& camera : cameras) {
+        if (camera.isEnabled()) {
+            QTimer::singleShot(500, this, [this, camera]() {
+                startForwarding(camera);
+            });
+        }
     }
 }

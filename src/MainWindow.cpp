@@ -4,6 +4,9 @@
 #include "WindowsService.h"
 #include "CameraDiscovery.h"
 #include "VpnWidget.h"
+#include "NetworkInterfaceManager.h"
+#include "EchoServer.h"
+#include "PingResponder.h"
 #include <QApplication>
 #include <QMenuBar>
 #include <QStatusBar>
@@ -17,6 +20,7 @@
 #include <QSplitter>
 #include <QGroupBox>
 #include <QTableWidget>
+#include <QNetworkInterface>
 #include <QTableWidgetItem>
 #include <QPushButton>
 #include <QLabel>
@@ -921,10 +925,20 @@ MainWindow::MainWindow(QWidget *parent)
     , m_pingProcess(nullptr)
 {    setWindowTitle("Camera Server Qt6");
     setMinimumSize(800, 600);
-    
-    // Initialize camera manager
+      // Initialize camera manager
     LOG_INFO("Creating CameraManager...", "MainWindow");
     m_cameraManager = new CameraManager(this);
+    
+    // Initialize network interface manager
+    LOG_INFO("Creating NetworkInterfaceManager...", "MainWindow");
+    m_networkManager = new NetworkInterfaceManager(this);
+      // Initialize echo server for ping testing
+    LOG_INFO("Creating EchoServer...", "MainWindow");
+    m_echoServer = new EchoServer(this);
+    
+    // Initialize ping responder for ICMP ping replies
+    LOG_INFO("Creating PingResponder...", "MainWindow");
+    m_pingResponder = new PingResponder(this);
     
     LOG_INFO("Creating menu bar...", "MainWindow");
     createMenuBar();
@@ -952,12 +966,41 @@ MainWindow::MainWindow(QWidget *parent)
         close();
         qApp->quit();
     });
-    
-    // Load settings and initialize
+      // Load settings and initialize
     LOG_INFO("Loading settings...", "MainWindow");
     loadSettings();
     LOG_INFO("Initializing camera manager...", "MainWindow");
     m_cameraManager->initialize();
+    
+    // Connect network manager to port forwarder
+    if (m_cameraManager->getPortForwarder()) {
+        m_cameraManager->getPortForwarder()->setNetworkInterfaceManager(m_networkManager);
+    }
+    
+    // Start network interface monitoring
+    LOG_INFO("Starting network interface monitoring...", "MainWindow");
+    m_networkManager->startMonitoring();    // Start echo server for remote ping testing
+    LOG_INFO("Starting echo server...", "MainWindow");
+    ConfigManager& config = ConfigManager::instance();
+    if (config.isEchoServerEnabled()) {
+        if (m_echoServer->startServer(config.getEchoServerPort())) {
+            LOG_INFO(QString("Echo server started on port %1").arg(m_echoServer->serverPort()), "MainWindow");
+        } else {
+            LOG_WARNING("Failed to start echo server", "MainWindow");
+        }
+    } else {
+        LOG_INFO("Echo server disabled in configuration", "MainWindow");
+    }
+    
+    // Start ping responder for ICMP ping replies
+    LOG_INFO("Starting ping responder...", "MainWindow");
+    if (m_pingResponder->startResponder()) {
+        LOG_INFO("ICMP ping responder started successfully", "MainWindow");
+        showMessage("ICMP ping responder started - server will respond to ping requests");
+    } else {
+        LOG_WARNING("Failed to start ping responder - may need administrator privileges", "MainWindow");
+        showMessage("Warning: ICMP ping responder failed to start. Run as administrator for ping functionality.");
+    }
     
     LOG_INFO("Updating camera table...", "MainWindow");
     updateCameraTable();
@@ -1293,11 +1336,149 @@ void MainWindow::onConfigurationChanged()
 {
     updateCameraTable();
     updateButtons();
+    
+    // Restart echo server if configuration changed
+    restartEchoServer();
 }
 
 void MainWindow::onLogMessage(const QString& message)
 {
     appendLog(message);
+}
+
+void MainWindow::onNetworkInterfacesChanged()
+{
+    LOG_INFO("Network interfaces changed", "MainWindow");
+    showMessage("Network interfaces changed");
+    
+    // Update status with current interface information
+    updateNetworkStatus();
+}
+
+void MainWindow::onNetworkInterfaceRemoved(const QString& interfaceName)
+{
+    LOG_INFO(QString("Network interface removed: %1").arg(interfaceName), "MainWindow");
+    showMessage(QString("Network interface removed: %1").arg(interfaceName));
+    
+    // Update status with current interface information
+    updateNetworkStatus();
+}
+
+void MainWindow::onWireGuardStateChanged(bool isActive)
+{
+    QString status = isActive ? "active" : "inactive";
+    LOG_INFO(QString("WireGuard state changed: %1").arg(status), "MainWindow");
+    showMessage(QString("WireGuard VPN is now %1").arg(status));
+    
+    // Update status bar with VPN state
+    if (isActive) {
+        statusBar()->showMessage("WireGuard VPN Active", 5000);
+    } else {
+        statusBar()->showMessage("WireGuard VPN Inactive", 5000);
+    }
+}
+
+void MainWindow::onEchoClientConnected(const QString& clientAddress)
+{
+    LOG_INFO(QString("Echo server: Client connected from %1").arg(clientAddress), "MainWindow");
+    showMessage(QString("Ping client connected: %1").arg(clientAddress));
+}
+
+void MainWindow::onEchoClientDisconnected(const QString& clientAddress)
+{
+    LOG_INFO(QString("Echo server: Client disconnected from %1").arg(clientAddress), "MainWindow");
+    showMessage(QString("Ping client disconnected: %1").arg(clientAddress));
+}
+
+void MainWindow::onEchoDataReceived(const QString& clientAddress, int bytesEchoed)
+{
+    // Log ping requests for debugging, but don't spam the UI for every ping
+    static QMap<QString, qint64> lastLogTime;
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    
+    if (!lastLogTime.contains(clientAddress) || 
+        currentTime - lastLogTime[clientAddress] > 30000) { // Log once every 30 seconds per client
+        LOG_DEBUG(QString("Echo server: Received %1 bytes from %2").arg(bytesEchoed).arg(clientAddress), "MainWindow");
+        lastLogTime[clientAddress] = currentTime;
+    }
+}
+
+void MainWindow::onPingReceived(const QString& sourceAddress, quint16 identifier, quint16 sequence)
+{
+    // Log ping requests for debugging, but don't spam the UI for every ping
+    static QMap<QString, qint64> lastLogTime;
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    
+    if (!lastLogTime.contains(sourceAddress) || 
+        currentTime - lastLogTime[sourceAddress] > 10000) { // Log once every 10 seconds per source
+        LOG_DEBUG(QString("ICMP ping received from %1 (ID: %2, Seq: %3)")
+                  .arg(sourceAddress).arg(identifier).arg(sequence), "MainWindow");
+        showMessage(QString("Ping received from %1").arg(sourceAddress));
+        lastLogTime[sourceAddress] = currentTime;
+    }
+}
+
+void MainWindow::onPingReplied(const QString& sourceAddress, quint16 identifier, quint16 sequence, quint32 responseTime)
+{
+    // Log successful ping replies occasionally
+    static QMap<QString, qint64> lastLogTime;
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    
+    if (!lastLogTime.contains(sourceAddress) || 
+        currentTime - lastLogTime[sourceAddress] > 10000) { // Log once every 10 seconds per source
+        LOG_DEBUG(QString("ICMP ping replied to %1 (ID: %2, Seq: %3, Time: %4ms)")
+                  .arg(sourceAddress).arg(identifier).arg(sequence).arg(responseTime), "MainWindow");
+        lastLogTime[sourceAddress] = currentTime;
+    }
+}
+
+void MainWindow::onPingResponderError(const QString& error)
+{
+    LOG_ERROR(QString("Ping responder error: %1").arg(error), "MainWindow");
+    showMessage(QString("Ping responder error: %1").arg(error));
+}
+
+void MainWindow::updateNetworkStatus()
+{
+    if (!m_networkManager) return;
+    
+    auto interfaces = m_networkManager->getActiveInterfaces();
+    bool hasWireGuard = m_networkManager->isWireGuardActive();
+    
+    QString statusText = QString("Interfaces: %1").arg(interfaces.size());
+    if (hasWireGuard) {
+        statusText += " (WireGuard active)";
+    }
+    
+    // Update a network status label if we have one, or show in status bar
+    statusBar()->showMessage(statusText, 3000);
+}
+
+void MainWindow::restartEchoServer()
+{
+    if (!m_echoServer) return;
+      ConfigManager& config = ConfigManager::instance();
+    
+    // Stop the current server
+    if (m_echoServer->isRunning()) {
+        LOG_INFO("Stopping echo server for configuration change", "MainWindow");
+        m_echoServer->stopServer();
+    }
+    
+    // Start with new configuration if enabled
+    if (config.isEchoServerEnabled()) {
+        LOG_INFO(QString("Starting echo server on port %1").arg(config.getEchoServerPort()), "MainWindow");
+        if (m_echoServer->startServer(config.getEchoServerPort())) {
+            LOG_INFO(QString("Echo server restarted on port %1").arg(m_echoServer->serverPort()), "MainWindow");
+            showMessage(QString("Echo server restarted on port %1").arg(m_echoServer->serverPort()));
+        } else {
+            LOG_WARNING("Failed to restart echo server", "MainWindow");
+            showMessage("Failed to restart echo server");
+        }
+    } else {
+        LOG_INFO("Echo server disabled in configuration", "MainWindow");
+        showMessage("Echo server disabled");
+    }
 }
 
 void MainWindow::createMenuBar()
@@ -1480,7 +1661,29 @@ void MainWindow::setupConnections()
     connect(m_cameraManager, &CameraManager::configurationChanged,
             this, &MainWindow::onConfigurationChanged);    // Logger
     connect(&Logger::instance(), &Logger::logMessage,
-            this, &MainWindow::onLogMessage);
+            this, &MainWindow::onLogMessage);    // Network Interface Manager
+    connect(m_networkManager, &NetworkInterfaceManager::interfacesChanged,
+            this, &MainWindow::onNetworkInterfacesChanged);
+    connect(m_networkManager, &NetworkInterfaceManager::interfaceRemoved,
+            this, &MainWindow::onNetworkInterfaceRemoved);    connect(m_networkManager, &NetworkInterfaceManager::wireGuardInterfaceStateChanged,
+            this, &MainWindow::onWireGuardStateChanged);    // Echo Server
+    connect(m_echoServer, &EchoServer::clientConnected,
+            this, &MainWindow::onEchoClientConnected);
+    connect(m_echoServer, &EchoServer::clientDisconnected,
+            this, &MainWindow::onEchoClientDisconnected);    connect(m_echoServer, &EchoServer::dataEchoed,
+            this, &MainWindow::onEchoDataReceived);
+    
+    // Ping Responder
+    connect(m_pingResponder, &PingResponder::pingReceived,
+            this, &MainWindow::onPingReceived);
+    connect(m_pingResponder, &PingResponder::pingReplied,
+            this, &MainWindow::onPingReplied);
+    connect(m_pingResponder, &PingResponder::errorOccurred,
+            this, &MainWindow::onPingResponderError);
+    
+    // Configuration changes
+    connect(&ConfigManager::instance(), &ConfigManager::configChanged,
+            this, &MainWindow::onConfigurationChanged);
     
     // VPN Widget
     connect(m_vpnWidget, &VpnWidget::statusChanged,

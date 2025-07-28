@@ -76,6 +76,9 @@ set(SOURCES
     src/WireGuardManager.cpp
     src/WireGuardConfigDialog.cpp
     src/VpnWidget.cpp
+    src/NetworkInterfaceManager.cpp
+    src/EchoServer.cpp
+    src/PingResponder.cpp
 )
 
 # Header files
@@ -92,6 +95,9 @@ set(HEADERS
     include/WireGuardManager.h
     include/WireGuardConfigDialog.h
     include/VpnWidget.h
+    include/NetworkInterfaceManager.h
+    include/EchoServer.h
+    include/PingResponder.h
 )
 
 # Resource files

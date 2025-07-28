@@ -27,11 +27,13 @@ public:
     void stopCamera(const QString& id);
     void startAllCameras();
     void stopAllCameras();
-    
-    // Status
+      // Status
     bool isCameraRunning(const QString& id) const;
     QStringList getRunningCameras() const;
     QList<CameraConfig> getAllCameras() const;
+    
+    // Access to port forwarder for network interface management
+    PortForwarder* getPortForwarder() const { return m_portForwarder; }
 
 signals:
     void cameraStarted(const QString& id);

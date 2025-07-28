@@ -25,6 +25,10 @@ class QAction;
 class QMenu;
 QT_END_NAMESPACE
 
+class NetworkInterfaceManager;
+class EchoServer;
+class PingResponder;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -56,21 +60,34 @@ private slots:
     void showAbout();
     void onCameraSelectionChanged();
     void onCameraStarted(const QString& id);
-    void onCameraStopped(const QString& id);
-    void onCameraError(const QString& id, const QString& error);
+    void onCameraStopped(const QString& id);    void onCameraError(const QString& id, const QString& error);
     void onConfigurationChanged();
     void onLogMessage(const QString& message);
     void onPingFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    
+    // Network interface manager slots
+    void onNetworkInterfacesChanged();
+    void onNetworkInterfaceRemoved(const QString& interfaceName);
+    void onWireGuardStateChanged(bool isActive);
+      // Echo server slots
+    void onEchoClientConnected(const QString& clientAddress);
+    void onEchoClientDisconnected(const QString& clientAddress);
+    void onEchoDataReceived(const QString& clientAddress, int bytesEchoed);
+    
+    // Ping responder slots
+    void onPingReceived(const QString& sourceAddress, quint16 identifier, quint16 sequence);
+    void onPingReplied(const QString& sourceAddress, quint16 identifier, quint16 sequence, quint32 responseTime);
+    void onPingResponderError(const QString& error);
 
 private:
     void createMenuBar();
     void createStatusBar();
     void createCentralWidget();
     void setupConnections();
-    void updateCameraTable();
-    void updateButtons();
-    void loadSettings();
+    void updateCameraTable();    void updateButtons();    void loadSettings();
     void saveSettings();
+    void updateNetworkStatus();
+    void restartEchoServer();
     
     // UI Components
     QSplitter* m_mainSplitter;
@@ -106,12 +123,14 @@ private:
     QAction* m_exitAction;
     QAction* m_installServiceAction;
     QAction* m_uninstallServiceAction;
-    QAction* m_aboutAction;
-    
-    // Core components
+    QAction* m_aboutAction;    // Core components
     CameraManager* m_cameraManager;
     SystemTrayManager* m_trayManager;
-      // State
+    NetworkInterfaceManager* m_networkManager;
+    EchoServer* m_echoServer;
+    PingResponder* m_pingResponder;
+    
+    // State
     bool m_isClosingToTray;
     bool m_forceQuit;
     QProcess* m_pingProcess;

@@ -15,6 +15,8 @@
 
 ConfigManager::ConfigManager()
     : m_autoStartEnabled(false)
+    , m_echoServerEnabled(true)
+    , m_echoServerPort(7777)
 {
     // Set up file paths
     QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
@@ -61,9 +63,10 @@ bool ConfigManager::loadConfig()
     }
     
     QJsonObject root = doc.object();
-    
-    // Load settings
+      // Load settings
     m_autoStartEnabled = root["autoStart"].toBool(false);
+    m_echoServerEnabled = root["echoServerEnabled"].toBool(true);
+    m_echoServerPort = root["echoServerPort"].toInt(7777);
     
     // Load cameras
     m_cameras.clear();
@@ -81,9 +84,10 @@ bool ConfigManager::loadConfig()
 bool ConfigManager::saveConfig()
 {
     QJsonObject root;
-    
-    // Save settings
+      // Save settings
     root["autoStart"] = m_autoStartEnabled;
+    root["echoServerEnabled"] = m_echoServerEnabled;
+    root["echoServerPort"] = m_echoServerPort;
     
     // Save cameras
     QJsonArray camerasArray;
@@ -182,6 +186,33 @@ void ConfigManager::setAutoStartEnabled(bool enabled)
     }
 }
 
+void ConfigManager::setEchoServerEnabled(bool enabled)
+{
+    if (m_echoServerEnabled != enabled) {
+        m_echoServerEnabled = enabled;
+        saveConfig();
+        
+        LOG_INFO(QString("Echo server %1").arg(enabled ? "enabled" : "disabled"), "Config");
+        emit configChanged();
+    }
+}
+
+void ConfigManager::setEchoServerPort(int port)
+{
+    if (port < 1 || port > 65535) {
+        LOG_WARNING(QString("Invalid echo server port: %1").arg(port), "Config");
+        return;
+    }
+    
+    if (m_echoServerPort != port) {
+        m_echoServerPort = port;
+        saveConfig();
+        
+        LOG_INFO(QString("Echo server port changed to %1").arg(port), "Config");
+        emit configChanged();
+    }
+}
+
 int ConfigManager::getNextExternalPort() const
 {
     int maxPort = 8550; // Start from 8551
@@ -209,6 +240,8 @@ void ConfigManager::createDefaultConfig()
 {
     m_cameras.clear();
     m_autoStartEnabled = false;
+    m_echoServerEnabled = true;
+    m_echoServerPort = 7777;
     
     LOG_INFO("Created default configuration", "Config");
 }

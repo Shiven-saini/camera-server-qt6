@@ -7,15 +7,17 @@
 #include <QNetworkProxy>
 #include <QTimer>
 #include <QHash>
+#include <QHostAddress>
 #include "CameraConfig.h"
+
+class NetworkInterfaceManager;
 
 class PortForwarder : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit PortForwarder(QObject *parent = nullptr);
-    ~PortForwarder();
+    explicit PortForwarder(QObject *parent = nullptr);    ~PortForwarder();
     
     bool startForwarding(const CameraConfig& camera);
     void stopForwarding(const QString& cameraId);
@@ -23,6 +25,10 @@ public:
     
     bool isForwarding(const QString& cameraId) const;
     QStringList getActiveForwards() const;
+
+    // Network interface management
+    void setNetworkInterfaceManager(NetworkInterfaceManager* manager);
+    NetworkInterfaceManager* networkInterfaceManager() const;
 
 signals:
     void forwardingStarted(const QString& cameraId, int externalPort);
@@ -39,7 +45,8 @@ private slots:
     void handleTargetDisconnected();
     void handleTargetDataReady();
     void handleConnectionError(QAbstractSocket::SocketError error);
-    void handleReconnectTimer();
+    void handleReconnectTimer();    void onNetworkInterfacesChanged();
+    void onWireGuardStateChanged(bool active);
 
 private:
     struct ForwardingSession {
@@ -53,9 +60,12 @@ private:
     void setupReconnectTimer(const QString& cameraId);
     void cleanupSession(const QString& cameraId);
     void forwardData(QTcpSocket* from, QTcpSocket* to);
+    bool bindToAllInterfaces(QTcpServer* server, quint16 port);
+    void restartAllForwarding();
     
     QHash<QString, ForwardingSession*> m_sessions;
     QHash<QTcpSocket*, QString> m_socketToCameraMap;
+    NetworkInterfaceManager* m_networkManager;
 };
 
 #endif // PORTFORWARDER_H

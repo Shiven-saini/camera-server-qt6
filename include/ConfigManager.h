@@ -21,10 +21,15 @@ public:
     void removeCamera(const QString& id);
     QList<CameraConfig> getAllCameras() const;
     CameraConfig getCamera(const QString& id) const;
-    
-    // Settings
+      // Settings
     bool isAutoStartEnabled() const { return m_autoStartEnabled; }
     void setAutoStartEnabled(bool enabled);
+    
+    // Echo server settings
+    bool isEchoServerEnabled() const { return m_echoServerEnabled; }
+    void setEchoServerEnabled(bool enabled);
+    int getEchoServerPort() const { return m_echoServerPort; }
+    void setEchoServerPort(int port);
     
     int getNextExternalPort() const;
     
@@ -41,9 +46,10 @@ private:
     
     void createDefaultConfig();
     void updateWindowsAutoStart();
-    
-    QList<CameraConfig> m_cameras;
+      QList<CameraConfig> m_cameras;
     bool m_autoStartEnabled;
+    bool m_echoServerEnabled;
+    int m_echoServerPort;
     QString m_configFilePath;
     QString m_logFilePath;
 };
