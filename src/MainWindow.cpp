@@ -74,12 +74,26 @@ private slots:
 private:    void setupUI()
     {
         QFormLayout* layout = new QFormLayout(this);
-        
-        m_nameEdit = new QLineEdit(this);
+          m_nameEdit = new QLineEdit(this);
         m_ipEdit = new QLineEdit(this);
         m_portSpinBox = new QSpinBox(this);
         m_portSpinBox->setRange(1, 65535);
         m_portSpinBox->setValue(554);
+        
+        // External port field with auto-assignment
+        m_externalPortSpinBox = new QSpinBox(this);
+        m_externalPortSpinBox->setRange(1, 65535);
+        m_externalPortSpinBox->setValue(8551);
+        
+        m_autoAssignPortButton = new QPushButton("Auto-Assign", this);
+        m_autoAssignPortButton->setToolTip("Automatically assign next available port");
+        connect(m_autoAssignPortButton, &QPushButton::clicked, this, &CameraConfigDialog::autoAssignPort);
+        
+        QWidget* externalPortWidget = new QWidget(this);
+        QHBoxLayout* externalPortLayout = new QHBoxLayout(externalPortWidget);
+        externalPortLayout->setContentsMargins(0, 0, 0, 0);
+        externalPortLayout->addWidget(m_externalPortSpinBox);
+        externalPortLayout->addWidget(m_autoAssignPortButton);
         
         m_brandComboBox = new QComboBox(this);
         m_brandComboBox->addItems({"Generic", "Hikvision", "CP Plus", "Dahua", "Axis", "Vivotek", "Foscam"});
@@ -123,10 +137,10 @@ private:    void setupUI()
         
         m_enabledCheckBox = new QCheckBox(this);
         m_enabledCheckBox->setChecked(true);
-        
-        layout->addRow("Camera Name:", m_nameEdit);
+          layout->addRow("Camera Name:", m_nameEdit);
         layout->addRow("IP Address:", m_ipEdit);
         layout->addRow("Port:", m_portSpinBox);
+        layout->addRow("External Port:", externalPortWidget);
         layout->addRow("Brand:", m_brandComboBox);
         layout->addRow("Model:", m_modelEdit);
         layout->addRow(credentialsGroup);
@@ -155,18 +169,19 @@ private:    void setupUI()
         connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
         
         layout->addRow(buttonBox);
-        
-        // Connect signals to update RTSP preview
+          // Connect signals to update RTSP preview
         connect(m_usernameEdit, &QLineEdit::textChanged, this, &CameraConfigDialog::updateRtspPreview);
         connect(m_passwordEdit, &QLineEdit::textChanged, this, &CameraConfigDialog::updateRtspPreview);
         connect(m_ipEdit, &QLineEdit::textChanged, this, &CameraConfigDialog::updateRtspPreview);
         connect(m_portSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &CameraConfigDialog::updateRtspPreview);
+        connect(m_externalPortSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &CameraConfigDialog::updateRtspPreview);
         connect(m_brandComboBox, &QComboBox::currentTextChanged, this, &CameraConfigDialog::updateRtspPreview);
     }    void loadCamera()
     {
         m_nameEdit->setText(m_camera.name());
         m_ipEdit->setText(m_camera.ipAddress());
         m_portSpinBox->setValue(m_camera.port() > 0 ? m_camera.port() : 554);
+        m_externalPortSpinBox->setValue(m_camera.externalPort() > 0 ? m_camera.externalPort() : 8551);
         m_brandComboBox->setCurrentText(m_camera.brand().isEmpty() ? "Generic" : m_camera.brand());
         m_modelEdit->setText(m_camera.model());
         m_usernameEdit->setText(m_camera.username());
@@ -176,21 +191,23 @@ private:    void setupUI()
         // Update RTSP preview after loading
         updateRtspPreview();
     }
-    
-    void saveCamera()
+      void saveCamera()
     {
         m_camera.setName(m_nameEdit->text().trimmed());
         m_camera.setIpAddress(m_ipEdit->text().trimmed());
         m_camera.setPort(m_portSpinBox->value());
+        m_camera.setExternalPort(m_externalPortSpinBox->value());
         m_camera.setBrand(m_brandComboBox->currentText());
         m_camera.setModel(m_modelEdit->text().trimmed());
         m_camera.setUsername(m_usernameEdit->text().trimmed());
         m_camera.setPassword(m_passwordEdit->text());
         m_camera.setEnabled(m_enabledCheckBox->isChecked());
-    }    CameraConfig m_camera;
+    }CameraConfig m_camera;
     QLineEdit* m_nameEdit;
     QLineEdit* m_ipEdit;
     QSpinBox* m_portSpinBox;
+    QSpinBox* m_externalPortSpinBox;
+    QPushButton* m_autoAssignPortButton;
     QComboBox* m_brandComboBox;
     QLineEdit* m_modelEdit;
     QLineEdit* m_usernameEdit;
@@ -360,11 +377,40 @@ private slots:
         
         m_rtspUrlLabel->setToolTip(tooltip);
     }
-    
-    void copyRtspUrl()
+      void copyRtspUrl()
     {
         QApplication::clipboard()->setText(m_rtspUrlLabel->text());
-        QMessageBox::information(this, "Copied", "RTSP URL copied to clipboard!");    }
+        QMessageBox::information(this, "Copied", "RTSP URL copied to clipboard!");
+    }
+    
+    void autoAssignPort()
+    {
+        // Start from 8551 and find next available port
+        int nextPort = 8551;
+        QSet<int> usedPorts;
+          // Get all used external ports from main window (need parent access)
+        MainWindow* mainWindow = qobject_cast<MainWindow*>(parent());
+        if (mainWindow) {
+            // Get used ports from camera manager
+            const auto& cameras = mainWindow->getCameraManager()->getAllCameras();
+            for (const auto& camera : cameras) {
+                if (camera.externalPort() > 0) {
+                    usedPorts.insert(camera.externalPort());
+                }
+            }
+        }
+        
+        // Find next available port
+        while (usedPorts.contains(nextPort)) {
+            nextPort++;
+        }
+        
+        m_externalPortSpinBox->setValue(nextPort);
+        updateRtspPreview();
+        
+        QMessageBox::information(this, "Port Assigned", 
+            QString("Auto-assigned external port: %1").arg(nextPort));
+    }
 };
 
 // Camera Information Dialog
@@ -1001,11 +1047,16 @@ MainWindow::MainWindow(QWidget *parent)
         LOG_WARNING("Failed to start ping responder - may need administrator privileges", "MainWindow");
         showMessage("Warning: ICMP ping responder failed to start. Run as administrator for ping functionality.");
     }
-    
-    LOG_INFO("Updating camera table...", "MainWindow");
+      LOG_INFO("Updating camera table...", "MainWindow");
     updateCameraTable();
     LOG_INFO("Updating buttons...", "MainWindow");
     updateButtons();
+    
+    // Initialize statistics refresh timer
+    m_statisticsRefreshTimer = new QTimer(this);
+    connect(m_statisticsRefreshTimer, &QTimer::timeout, this, &MainWindow::refreshConnectionStatistics);
+    m_statisticsRefreshTimer->start(2000); // Refresh every 2 seconds
+    LOG_INFO("Connection statistics refresh timer started", "MainWindow");
     
     statusBar()->showMessage("Ready", 2000);
     LOG_INFO("MainWindow initialized successfully", "MainWindow");
@@ -1346,6 +1397,80 @@ void MainWindow::onLogMessage(const QString& message)
     appendLog(message);
 }
 
+void MainWindow::refreshConnectionStatistics()
+{
+    // Only refresh if there are cameras and the table is visible
+    if (m_cameraTable->rowCount() == 0) {
+        return;
+    }
+    
+    // Update connection statistics for each camera row
+    for (int i = 0; i < m_cameraTable->rowCount(); ++i) {
+        QTableWidgetItem* idItem = m_cameraTable->item(i, 0);
+        if (!idItem) continue;
+        
+        QString cameraId = idItem->data(Qt::UserRole).toString();
+        bool isRunning = m_cameraManager->isCameraRunning(cameraId);
+        
+        // Update connections count (column 8)
+        int connectionCount = 0;
+        if (isRunning) {
+            connectionCount = m_cameraManager->getPortForwarder()->getConnectionCount(cameraId);
+        }
+        
+        QTableWidgetItem* connectionsItem = m_cameraTable->item(i, 8);
+        if (connectionsItem) {
+            connectionsItem->setText(QString::number(connectionCount));
+            if (connectionCount > 0) {
+                connectionsItem->setBackground(QColor(144, 238, 144)); // Light green
+            } else {
+                connectionsItem->setBackground(QColor(255, 255, 255)); // White
+            }
+        }
+        
+        // Update data transferred (column 9)
+        QString dataTransferred = "0 B";
+        if (isRunning) {
+            qint64 bytes = m_cameraManager->getPortForwarder()->getBytesTransferred(cameraId);
+            if (bytes > 0) {
+                if (bytes >= 1024 * 1024 * 1024) {
+                    dataTransferred = QString::number(bytes / (1024.0 * 1024.0 * 1024.0), 'f', 2) + " GB";
+                } else if (bytes >= 1024 * 1024) {
+                    dataTransferred = QString::number(bytes / (1024.0 * 1024.0), 'f', 2) + " MB";
+                } else if (bytes >= 1024) {
+                    dataTransferred = QString::number(bytes / 1024.0, 'f', 2) + " KB";
+                } else {
+                    dataTransferred = QString::number(bytes) + " B";
+                }
+            }
+        }
+        
+        QTableWidgetItem* dataItem = m_cameraTable->item(i, 9);
+        if (dataItem) {
+            dataItem->setText(dataTransferred);
+        }
+        
+        // Update action buttons state
+        QWidget* actionWidget = m_cameraTable->cellWidget(i, 10);
+        if (actionWidget) {
+            // Find the start/stop button and update its state
+            QPushButton* startStopBtn = actionWidget->findChild<QPushButton*>();
+            if (startStopBtn) {
+                CameraConfig camera = ConfigManager::instance().getCamera(cameraId);
+                startStopBtn->setText(isRunning ? "Stop" : "Start");
+                startStopBtn->setEnabled(camera.isEnabled());
+            }
+            
+            // Find the restart button and update its state
+            QList<QPushButton*> buttons = actionWidget->findChildren<QPushButton*>();
+            if (buttons.size() > 1) {
+                QPushButton* restartBtn = buttons[1]; // Second button is restart
+                restartBtn->setEnabled(isRunning);
+            }
+        }
+    }
+}
+
 void MainWindow::onNetworkInterfacesChanged()
 {
     LOG_INFO("Network interfaces changed", "MainWindow");
@@ -1537,9 +1662,9 @@ void MainWindow::createCentralWidget()
     
     // Camera management group
     m_cameraGroupBox = new QGroupBox("Camera Configuration");
-    QVBoxLayout* cameraLayout = new QVBoxLayout(m_cameraGroupBox);      // Camera table
-    m_cameraTable = new QTableWidget(0, 9);
-    QStringList headers = {"#", "Name", "Brand", "Model", "IP Address", "Port", "External Port", "Status", "Test"};
+    QVBoxLayout* cameraLayout = new QVBoxLayout(m_cameraGroupBox);    // Camera table
+    m_cameraTable = new QTableWidget(0, 11);
+    QStringList headers = {"#", "Name", "Brand", "Model", "IP Address", "Port", "External Port", "Status", "Connections", "Data Transferred", "Actions"};
     m_cameraTable->setHorizontalHeaderLabels(headers);
     m_cameraTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_cameraTable->setAlternatingRowColors(true);
@@ -1750,17 +1875,84 @@ void MainWindow::updateCameraTable()
         if (isRunning) {
             statusItem->setBackground(QColor(144, 238, 144)); // Light green
         } else if (!camera.isEnabled()) {
-            statusItem->setBackground(QColor(211, 211, 211)); // Light gray
-        } else {
+            statusItem->setBackground(QColor(211, 211, 211)); // Light gray        } else {
             statusItem->setBackground(QColor(255, 182, 193)); // Light red
         }
         m_cameraTable->setItem(i, 7, statusItem);
         
-        // Test column - shows connectivity status
-        QTableWidgetItem* testItem = new QTableWidgetItem("Click Test");
-        testItem->setTextAlignment(Qt::AlignCenter);
-        testItem->setBackground(QColor(240, 240, 240)); // Light gray
-        m_cameraTable->setItem(i, 8, testItem);
+        // Connections column - shows active connection count
+        int connectionCount = 0;
+        if (isRunning) {
+            connectionCount = m_cameraManager->getPortForwarder()->getConnectionCount(camera.id());
+        }
+        QTableWidgetItem* connectionsItem = new QTableWidgetItem(QString::number(connectionCount));
+        connectionsItem->setTextAlignment(Qt::AlignCenter);
+        if (connectionCount > 0) {
+            connectionsItem->setBackground(QColor(144, 238, 144)); // Light green
+        }
+        m_cameraTable->setItem(i, 8, connectionsItem);
+        
+        // Data Transferred column - shows bytes transferred
+        QString dataTransferred = "0 B";
+        if (isRunning) {
+            qint64 bytes = m_cameraManager->getPortForwarder()->getBytesTransferred(camera.id());
+            if (bytes > 0) {
+                if (bytes >= 1024 * 1024 * 1024) {
+                    dataTransferred = QString::number(bytes / (1024.0 * 1024.0 * 1024.0), 'f', 2) + " GB";
+                } else if (bytes >= 1024 * 1024) {
+                    dataTransferred = QString::number(bytes / (1024.0 * 1024.0), 'f', 2) + " MB";
+                } else if (bytes >= 1024) {
+                    dataTransferred = QString::number(bytes / 1024.0, 'f', 2) + " KB";
+                } else {
+                    dataTransferred = QString::number(bytes) + " B";
+                }
+            }
+        }
+        QTableWidgetItem* dataItem = new QTableWidgetItem(dataTransferred);
+        dataItem->setTextAlignment(Qt::AlignCenter);
+        m_cameraTable->setItem(i, 9, dataItem);
+        
+        // Actions column - control buttons for each camera
+        QWidget* actionWidget = new QWidget();
+        QHBoxLayout* actionLayout = new QHBoxLayout(actionWidget);
+        actionLayout->setContentsMargins(2, 2, 2, 2);
+        actionLayout->setSpacing(2);
+        
+        QPushButton* startStopBtn = new QPushButton(isRunning ? "Stop" : "Start");
+        startStopBtn->setMaximumWidth(50);
+        startStopBtn->setEnabled(camera.isEnabled());
+        connect(startStopBtn, &QPushButton::clicked, [this, camera]() {
+            if (m_cameraManager->isCameraRunning(camera.id())) {
+                m_cameraManager->stopCamera(camera.id());
+            } else {
+                m_cameraManager->startCamera(camera.id());
+            }
+        });
+        
+        QPushButton* restartBtn = new QPushButton("↻");
+        restartBtn->setToolTip("Restart Port Forwarding");
+        restartBtn->setMaximumWidth(30);
+        restartBtn->setEnabled(isRunning);
+        connect(restartBtn, &QPushButton::clicked, [this, camera]() {
+            m_cameraManager->getPortForwarder()->restartForwarding(camera.id());
+        });
+        
+        QPushButton* testBtn = new QPushButton("Test");
+        testBtn->setMaximumWidth(40);
+        connect(testBtn, &QPushButton::clicked, [this, camera]() {
+            // Set the current camera ID for testing
+            QTableWidgetItem* idItem = m_cameraTable->item(m_cameraTable->currentRow(), 0);
+            if (idItem) {
+                testCamera();
+            }
+        });
+        
+        actionLayout->addWidget(startStopBtn);
+        actionLayout->addWidget(restartBtn);
+        actionLayout->addWidget(testBtn);
+        actionLayout->addStretch();
+        
+        m_cameraTable->setCellWidget(i, 10, actionWidget);
     }
     
     // Resize columns to content

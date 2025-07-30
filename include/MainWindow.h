@@ -33,12 +33,12 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-public:
-    explicit MainWindow(QWidget *parent = nullptr);
+public:    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     
     void showMessage(const QString& message);
     void appendLog(const QString& message);
+    CameraManager* getCameraManager() const { return m_cameraManager; }
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -64,6 +64,7 @@ private slots:
     void onConfigurationChanged();
     void onLogMessage(const QString& message);
     void onPingFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void refreshConnectionStatistics();
     
     // Network interface manager slots
     void onNetworkInterfacesChanged();
@@ -135,6 +136,7 @@ private:
     bool m_forceQuit;
     QProcess* m_pingProcess;
     QString m_currentTestingCameraId;
+    QTimer* m_statisticsRefreshTimer;
 };
 
 #endif // MAINWINDOW_H
