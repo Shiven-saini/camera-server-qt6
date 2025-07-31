@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ViscoConnect VERSION 2.1.5 LANGUAGES CXX)
+project(ViscoConnect VERSION 2.1.5 LANGUAGES CXX RC)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -105,11 +105,18 @@ set(RESOURCES
     resources/resources.qrc
 )
 
+# Windows-specific resources (manifest, icons, etc.)
+if(WIN32)
+    set(WIN32_RESOURCES
+        resources/app.rc
+    )
+endif()
+
 # Include directories
 include_directories(include)
 
 # Create executable (WIN32 suppresses console window)
-add_executable(ViscoConnect WIN32 ${SOURCES} ${HEADERS} ${RESOURCES})
+add_executable(ViscoConnect WIN32 ${SOURCES} ${HEADERS} ${RESOURCES} ${WIN32_RESOURCES})
 
 # Link Qt6 libraries
 target_link_libraries(ViscoConnect PRIVATE Qt6::Core Qt6::Widgets Qt6::Network)
