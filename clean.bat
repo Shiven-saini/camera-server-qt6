@@ -1,5 +1,5 @@
 @echo off
-echo Cleaning Camera Server Qt6 Build...
+echo Cleaning Visco Connect Build...
 
 if not exist "build" (
     echo Build directory does not exist. Nothing to clean.

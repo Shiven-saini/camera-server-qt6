@@ -141,7 +141,7 @@ python test_rtsp_forwarding.py 10.0.0.2 8551 /stream1
 ## Debugging Tips
 
 ### 1. Enable Verbose Logging
-- Check application logs in `%LOCALAPPDATA%\CameraServer\camera-server.log`
+- Check application logs in `%LOCALAPPDATA%\ViscoConnect\visco-connect.log`
 - Look for RTSP protocol messages in logs
 
 ### 2. Network Packet Capture
@@ -206,6 +206,6 @@ If issues persist after trying the above:
    - Try different video codecs/resolutions
 
 4. **Contact Support**
-   - Provide full logs from `%LOCALAPPDATA%\CameraServer\`
+   - Provide full logs from `%LOCALAPPDATA%\ViscoConnect\`
    - Include camera model and network topology
    - Test results from troubleshooting steps

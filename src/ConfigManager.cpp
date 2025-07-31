@@ -23,7 +23,7 @@ ConfigManager::ConfigManager()
     QDir().mkpath(appDataPath);
     
     m_configFilePath = appDataPath + "/config.json";
-    m_logFilePath = appDataPath + "/camera-server.log";
+    m_logFilePath = appDataPath + "/visco-connect.log";
 }
 
 ConfigManager::~ConfigManager()
@@ -250,13 +250,12 @@ void ConfigManager::updateWindowsAutoStart()
 {
 #ifdef Q_OS_WIN
     QSettings settings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
-    
-    if (m_autoStartEnabled) {
+      if (m_autoStartEnabled) {
         QString appPath = QCoreApplication::applicationFilePath();
-        settings.setValue("CameraServerQt6", appPath);
+        settings.setValue("ViscoConnect", appPath);
         LOG_INFO("Added application to Windows startup", "Config");
     } else {
-        settings.remove("CameraServerQt6");
+        settings.remove("ViscoConnect");
         LOG_INFO("Removed application from Windows startup", "Config");
     }
 #endif

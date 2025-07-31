@@ -11,7 +11,7 @@ Logger::Logger()
     // Set default log file path
     QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QDir().mkpath(appDataPath);
-    setLogFile(appDataPath + "/camera-server.log");
+    setLogFile(appDataPath + "/visco-connect.log");
 }
 
 Logger::~Logger()

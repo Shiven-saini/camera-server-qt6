@@ -1,4 +1,4 @@
-# Quick Start Guide - Camera Server Qt6
+# Quick Start Guide - Visco Connect v2.1.5
 
 ## Prerequisites
 1. Windows 10/11
@@ -115,9 +115,9 @@ configure.bat
 
 ## Configuration Locations
 
-- **Config**: `%LOCALAPPDATA%\CameraServer\config.json`
-- **Logs**: `%LOCALAPPDATA%\CameraServer\camera-server.log`
-- **Lock**: `%LOCALAPPDATA%\CameraServer\camera-server.lock`
+- **Config**: `%LOCALAPPDATA%\ViscoConnect\config.json`
+- **Logs**: `%LOCALAPPDATA%\ViscoConnect\visco-connect.log`
+- **Lock**: `%LOCALAPPDATA%\ViscoConnect\visco-connect.lock`
 
 ## Advanced Usage
 
@@ -142,10 +142,10 @@ Edit `config.json` directly for bulk camera setup:
 ### Service Mode
 ```batch
 # Install service manually
-CameraServerQt6.exe --service
+ViscoConnect.exe --service
 
 # Check service status
-sc query CameraServerQt6Service
+sc query ViscoConnectService
 ```
 
 ---

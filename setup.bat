@@ -1,11 +1,11 @@
 @echo off
 REM ------------------------------------------------------------------
-REM  Setup script for CameraServerQt6 with MinGW
+REM  Setup script for Visco Connect with MinGW
 REM  This script finds a MinGW-based Qt installation and configures
 REM  the environment variables needed for CMake to build the project.
 REM ------------------------------------------------------------------
 
-echo Camera Server Qt6 Setup (for MinGW)
+echo Visco Connect Setup (for MinGW)
 echo ===================================
 echo.
 echo This application requires a MinGW version of Qt 6.5.3 or later.

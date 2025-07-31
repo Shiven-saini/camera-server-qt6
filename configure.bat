@@ -1,5 +1,5 @@
 @echo off
-echo Configuring Camera Server Qt6...
+echo Configuring Visco Connect...
 echo.
 
 REM Check if Qt6 is available

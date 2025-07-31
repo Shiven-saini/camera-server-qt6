@@ -43,15 +43,14 @@ int main(int argc, char *argv[])
         FreeLibrary(tunnelDll);
         return result ? 0 : 1;
     }
-    
-    QApplication app(argc, argv);
+      QApplication app(argc, argv);
     
     // Set application properties
-    app.setApplicationName("CameraServerQt6");
-    app.setApplicationDisplayName("Camera Server Qt6");
-    app.setApplicationVersion("1.0.0");
-    app.setOrganizationName("CameraServer");
-    app.setOrganizationDomain("cameraserver.local");
+    app.setApplicationName("ViscoConnect");
+    app.setApplicationVersion("2.1.5");
+    app.setOrganizationName("Visco Connect Team");
+    app.setApplicationDisplayName("Visco Connect v2.1.5 - Demo Build (Verbose Logging Enabled)");
+    app.setOrganizationDomain("viscoconnect.local");
     
     // Check if running as service
     bool runAsService = false;
@@ -65,10 +64,10 @@ int main(int argc, char *argv[])
     // Initialize logger
     QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QDir().mkpath(appDataPath);
-    Logger::instance().setLogFile(appDataPath + "/camera-server.log");
+    Logger::instance().setLogFile(appDataPath + "/visco-connect.log");
     Logger::instance().setLogLevel(LogLevel::Info);
     
-    LOG_INFO("=== Camera Server Qt6 Starting ===", "Main");
+    LOG_INFO("=== Visco Connect v2.1.5 Starting ===", "Main");
     LOG_INFO(QString("Version: %1").arg(app.applicationVersion()), "Main");
     LOG_INFO(QString("Run as service: %1").arg(runAsService ? "Yes" : "No"), "Main");
     
@@ -119,7 +118,7 @@ int main(int argc, char *argv[])
         
         // Handle application quit cleanup
         QObject::connect(&app, &QApplication::aboutToQuit, []() {
-            LOG_INFO("=== Camera Server Qt6 Shutting Down ===", "Main");
+            LOG_INFO("=== Visco Connect v2.1.5 Shutting Down ===", "Main");
         });
         
         LOG_INFO("GUI application initialized successfully", "Main");

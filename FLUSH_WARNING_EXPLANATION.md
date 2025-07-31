@@ -101,7 +101,7 @@ if (!flushed) {
 netstat -an | findstr :8551
 
 # Monitor process performance
-Get-Process CameraServerQt6 | Select-Object CPU, WorkingSet, PagedMemorySize
+Get-Process ViscoConnect | Select-Object CPU, WorkingSet, PagedMemorySize
 
 # Test RTSP stream quality
 ffprobe -v quiet -print_format json -show_streams "rtsp://user:pass@IP:8551/path"

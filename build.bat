@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ================================================================
-echo       Camera Server Qt6 - Enhanced Build Script v2.0
+echo       Visco Connect - Enhanced Build Script v2.0
 echo ================================================================
 echo.
 
@@ -380,12 +380,11 @@ if "%COMPILER_TYPE%"=="MinGW" (
         cd ..
         pause
         exit /b 1
-    )
-    echo   [OK] Makefile generated successfully
+    )    echo   [OK] Makefile generated successfully
 ) else (
-    if not exist "CameraServerQt6.sln" (
+    if not exist "ViscoConnect.sln" (
         echo   [WARNING] Visual Studio solution file not found - checking for project files...
-        if not exist "CameraServerQt6.vcxproj" (
+        if not exist "ViscoConnect.vcxproj" (
             echo   [ERROR] No Visual Studio project files were generated!
             cd ..
             pause
@@ -447,7 +446,7 @@ REM Pre-compile Qt MOC files and auto-generated sources
 echo   [INFO] Pre-compiling Qt MOC and auto-generated files...
 if "%COMPILER_TYPE%"=="MinGW" (
     REM For MinGW, compile autogen target first
-    cmake --build . --target CameraServerQt6_autogen --config %BUILD_TYPE%
+    cmake --build . --target ViscoConnect_autogen --config %BUILD_TYPE%
     if %errorlevel% neq 0 (
         echo   [WARNING] Auto-generation step had issues (error code %errorlevel%)
         echo   [INFO] Continuing with main build...
@@ -456,7 +455,7 @@ if "%COMPILER_TYPE%"=="MinGW" (
     )
 ) else (
     REM For MSVC, ensure autogen target is built
-    cmake --build . --target CameraServerQt6_autogen --config %BUILD_TYPE%
+    cmake --build . --target ViscoConnect_autogen --config %BUILD_TYPE%
     if %errorlevel% neq 0 (
         echo   [WARNING] Auto-generation step had issues (error code %errorlevel%)
         echo   [INFO] Continuing with main build...
@@ -493,13 +492,13 @@ if %errorlevel% neq 0 (
 
 REM Validate final build artifacts
 echo   [INFO] Validating build artifacts and cache files...
-if exist "CameraServerQt6_autogen" (
+if exist "ViscoConnect_autogen" (
     echo   [OK] Qt autogen files compiled successfully
 ) else (
     echo   [WARNING] Qt autogen directory not found - this may indicate MOC compilation issues
 )
 
-if exist "CMakeFiles\CameraServerQt6.dir" (
+if exist "CMakeFiles\ViscoConnect.dir" (
     echo   [OK] CMake object files directory exists
 ) else (
     echo   [WARNING] CMake object files directory not found
@@ -521,12 +520,12 @@ echo.
 
 REM Find the executable
 set "EXE_PATH="
-if exist "build\%BUILD_TYPE%\CameraServerQt6.exe" (
-    set "EXE_PATH=build\%BUILD_TYPE%\CameraServerQt6.exe"
-) else if exist "build\bin\CameraServerQt6.exe" (
-    set "EXE_PATH=build\bin\CameraServerQt6.exe"
-) else if exist "build\CameraServerQt6.exe" (
-    set "EXE_PATH=build\CameraServerQt6.exe"
+if exist "build\%BUILD_TYPE%\ViscoConnect.exe" (
+    set "EXE_PATH=build\%BUILD_TYPE%\ViscoConnect.exe"
+) else if exist "build\bin\ViscoConnect.exe" (
+    set "EXE_PATH=build\bin\ViscoConnect.exe"
+) else if exist "build\ViscoConnect.exe" (
+    set "EXE_PATH=build\ViscoConnect.exe"
 )
 
 if defined EXE_PATH (
@@ -583,7 +582,7 @@ echo To run the application:
 if defined EXE_PATH (
     echo   %EXE_PATH%
 ) else (
-    echo   Check the build directory for CameraServerQt6.exe
+    echo   Check the build directory for ViscoConnect.exe
 )
 
 echo.

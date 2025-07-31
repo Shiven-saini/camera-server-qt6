@@ -40,7 +40,7 @@ void SystemTrayManager::initialize()
     m_trayIcon->show();
     
     // Show initial notification
-    showNotification("Camera Server Qt6", "Application started and running in system tray");
+    showNotification("Visco Connect", "Application started and running in system tray");
     
     LOG_INFO("System tray manager initialized", "SystemTrayManager");
 }
@@ -93,7 +93,7 @@ void SystemTrayManager::handleEnableAllCameras()
 {
     if (m_cameraManager) {
         m_cameraManager->startAllCameras();
-        showNotification("Camera Server Qt6", "Starting all cameras...", QSystemTrayIcon::Information);
+        showNotification("Visco Connect", "Starting all cameras...", QSystemTrayIcon::Information);
         LOG_INFO("All cameras enabled via system tray", "SystemTrayManager");
     }
 }
@@ -102,7 +102,7 @@ void SystemTrayManager::handleDisableAllCameras()
 {
     if (m_cameraManager) {
         m_cameraManager->stopAllCameras();
-        showNotification("Camera Server Qt6", "Stopping all cameras...", QSystemTrayIcon::Information);
+        showNotification("Visco Connect", "Stopping all cameras...", QSystemTrayIcon::Information);
         LOG_INFO("All cameras disabled via system tray", "SystemTrayManager");
     }
 }
@@ -186,7 +186,7 @@ void SystemTrayManager::updateTrayIconToolTip()
     QStringList runningCameras = m_cameraManager->getRunningCameras();
     int totalCameras = m_cameraManager->getAllCameras().size();
     
-    QString toolTip = QString("Camera Server Qt6\n%1 of %2 cameras running")
+    QString toolTip = QString("Visco Connect v2.1.5\n%1 of %2 cameras running")
                       .arg(runningCameras.size())
                       .arg(totalCameras);
     
@@ -210,5 +210,5 @@ void SystemTrayManager::notifyCameraStatusChange(const QString& cameraName, bool
         QSystemTrayIcon::Information : 
         QSystemTrayIcon::Warning;
     
-    showNotification("Camera Server Qt6", message, icon);
+    showNotification("Visco Connect", message, icon);
 }

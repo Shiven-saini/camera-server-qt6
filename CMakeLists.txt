@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(CameraServerQt6 VERSION 1.0.0 LANGUAGES CXX)
+project(ViscoConnect VERSION 2.1.5 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -109,14 +109,14 @@ set(RESOURCES
 include_directories(include)
 
 # Create executable
-add_executable(CameraServerQt6 ${SOURCES} ${HEADERS} ${RESOURCES})
+add_executable(ViscoConnect ${SOURCES} ${HEADERS} ${RESOURCES})
 
 # Link Qt6 libraries
-target_link_libraries(CameraServerQt6 PRIVATE Qt6::Core Qt6::Widgets Qt6::Network)
+target_link_libraries(ViscoConnect PRIVATE Qt6::Core Qt6::Widgets Qt6::Network)
 
 # Link Windows system libraries for WireGuard integration
 if(WIN32)
-    target_link_libraries(CameraServerQt6 PRIVATE advapi32 ws2_32)
+    target_link_libraries(ViscoConnect PRIVATE advapi32 ws2_32)
 endif()
 
 # Copy Qt6 DLLs to the output directory using windeployqt (Corrected Version)
@@ -128,17 +128,15 @@ if(WIN32)
         REQUIRED
     )
 
-    message(STATUS "Found windeployqt at: ${WINDEPLOYQT_EXECUTABLE}")
-
-    # Add the post-build command to run windeployqt
-    add_custom_command(TARGET CameraServerQt6 POST_BUILD
-        COMMAND ${WINDEPLOYQT_EXECUTABLE} $<TARGET_FILE:CameraServerQt6>
+    message(STATUS "Found windeployqt at: ${WINDEPLOYQT_EXECUTABLE}")    # Add the post-build command to run windeployqt
+    add_custom_command(TARGET ViscoConnect POST_BUILD
+        COMMAND ${WINDEPLOYQT_EXECUTABLE} $<TARGET_FILE:ViscoConnect>
         COMMENT "Deploying Qt DLLs to the output directory..."
         VERBATIM
     )
     
     # Copy WireGuard DLLs to output directory
-    add_custom_command(TARGET CameraServerQt6 POST_BUILD
+    add_custom_command(TARGET ViscoConnect POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/tunnel.dll"
             "${CMAKE_BINARY_DIR}/bin/tunnel.dll"
@@ -152,6 +150,6 @@ endif()
 
 
 # Set output directory
-set_target_properties(CameraServerQt6 PROPERTIES
+set_target_properties(ViscoConnect PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )

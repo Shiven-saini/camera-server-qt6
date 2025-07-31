@@ -1,8 +1,8 @@
 @echo off
-echo Camera Server Qt6 - Run Application
+echo Visco Connect - Run Application
 echo ===================================
 
-if not exist "build\Release\CameraServerQt6.exe" (
+if not exist "build\Release\ViscoConnect.exe" (
     echo Application not built yet.
     echo Please run the following scripts in order:
     echo   1. setup.bat
@@ -13,26 +13,26 @@ if not exist "build\Release\CameraServerQt6.exe" (
     exit /b 1
 )
 
-echo Starting Camera Server Qt6...
+echo Starting Visco Connect v2.1.5...
 echo.
 
 cd build\Release
 
-echo Application location: %CD%\CameraServerQt6.exe
+echo Application location: %CD%\ViscoConnect.exe
 echo.
 
 echo Starting application...
-start CameraServerQt6.exe
+start ViscoConnect.exe
 
 echo.
-echo Camera Server Qt6 has been launched!
+echo Visco Connect has been launched!
 echo.
 echo The application should now appear or be minimized to the system tray.
 echo.
 echo Configuration files will be created in:
-echo %LOCALAPPDATA%\CameraServer\
+echo %LOCALAPPDATA%\ViscoConnect\
 echo.
 echo Log files will be saved to:
-echo %LOCALAPPDATA%\CameraServer\camera-server.log
+echo %LOCALAPPDATA%\ViscoConnect\visco-connect.log
 echo.
 pause

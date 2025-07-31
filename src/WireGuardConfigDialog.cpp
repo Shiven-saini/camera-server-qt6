@@ -35,10 +35,10 @@ WireGuardConfigDialog::WireGuardConfigDialog(WireGuardManager* wgManager, QWidge
     connectSignals();
     
     // Initialize with default values
-    resetToDefaults();
-    
-    setWindowTitle("WireGuard Configuration");
-    resize(600, 500);
+    resetToDefaults();    setWindowTitle("WireGuard Configuration");
+    setMinimumSize(700, 650);
+    setMaximumSize(1000, 900);
+    resize(750, 700);
 }
 
 WireGuardConfigDialog::WireGuardConfigDialog(WireGuardManager* wgManager, const WireGuardConfig& config, QWidget *parent)
@@ -49,10 +49,10 @@ WireGuardConfigDialog::WireGuardConfigDialog(WireGuardManager* wgManager, const 
     setupUI();
     connectSignals();
     
-    setConfiguration(config);
-    
-    setWindowTitle(QString("Edit WireGuard Configuration - %1").arg(config.interfaceConfig.name));
-    resize(600, 500);
+    setConfiguration(config);    setWindowTitle(QString("Edit WireGuard Configuration - %1").arg(config.interfaceConfig.name));
+    setMinimumSize(700, 650);
+    setMaximumSize(1000, 900);
+    resize(750, 700);
 }
 
 WireGuardConfigDialog::~WireGuardConfigDialog()
@@ -448,21 +448,24 @@ void WireGuardConfigDialog::setupUI()
     QScrollArea* scrollArea = new QScrollArea;
     scrollArea->setWidgetResizable(true);
     scrollArea->setFrameShape(QFrame::NoFrame);
-    
-    QWidget* formWidget = new QWidget;
+      QWidget* formWidget = new QWidget;
     QVBoxLayout* formLayout = new QVBoxLayout(formWidget);
-    
-    // Basic Configuration Group
+    formLayout->setSpacing(15); // Add more spacing between groups
+    formLayout->setContentsMargins(10, 10, 10, 10);
+      // Basic Configuration Group
     QGroupBox* basicGroup = new QGroupBox("Basic Configuration");
     QFormLayout* basicForm = new QFormLayout(basicGroup);
+    basicForm->setVerticalSpacing(10);
+    basicForm->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
     
     m_nameEdit = new QLineEdit;
     m_nameEdit->setPlaceholderText("e.g., HomeVPN, OfficeVPN");
     basicForm->addRow("Configuration Name*:", m_nameEdit);
-    
-    // Key Management Group
+      // Key Management Group
     QGroupBox* keyGroup = new QGroupBox("Keys");
     QFormLayout* keyForm = new QFormLayout(keyGroup);
+    keyForm->setVerticalSpacing(10);
+    keyForm->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
       QHBoxLayout* privateKeyLayout = new QHBoxLayout;
     m_privateKeyEdit = new QLineEdit;
     m_privateKeyEdit->setPlaceholderText("Private key (will be generated automatically)");
@@ -484,10 +487,11 @@ void WireGuardConfigDialog::setupUI()
     publicKeyLayout->addWidget(m_publicKeyEdit);
     publicKeyLayout->addWidget(m_copyPublicKeyButton);
     keyForm->addRow("Public Key:", publicKeyLayout);
-    
-    // Network Configuration Group
+      // Network Configuration Group
     QGroupBox* networkGroup = new QGroupBox("Network Settings");
     QFormLayout* networkForm = new QFormLayout(networkGroup);
+    networkForm->setVerticalSpacing(10);
+    networkForm->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
     
     m_addressEdit = new QLineEdit;
     m_addressEdit->setPlaceholderText("e.g., 10.0.0.2/24");
@@ -503,10 +507,11 @@ void WireGuardConfigDialog::setupUI()
     m_listenPortSpin->setSpecialValueText("Auto-assign");
     m_listenPortSpin->setValue(0);
     networkForm->addRow("Listen Port:", m_listenPortSpin);
-    
-    // Simple Peer Configuration Group
+      // Simple Peer Configuration Group
     QGroupBox* peerGroup = new QGroupBox("Peer Configuration");
     QFormLayout* peerForm = new QFormLayout(peerGroup);
+    peerForm->setVerticalSpacing(10);
+    peerForm->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
     
     m_peerPublicKeyEdit = new QLineEdit;
     m_peerPublicKeyEdit->setPlaceholderText("Server's public key");

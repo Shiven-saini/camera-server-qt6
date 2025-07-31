@@ -10,9 +10,9 @@ SERVICE_STATUS WindowsService::s_serviceStatus = {};
 WindowsService* WindowsService::s_instance = nullptr;
 
 WindowsService::WindowsService()
-    : m_serviceName("CameraServerQt6Service")
-    , m_serviceDisplayName("Camera Server Qt6")
-    , m_serviceDescription("IP Camera Port Forwarding Service")
+    : m_serviceName("ViscoConnectService")
+    , m_serviceDisplayName("Visco Connect Service")
+    , m_serviceDescription("Visco Connect - IP Camera Port Forwarding Service")
     , m_isService(false)
     , m_serviceStopEvent(nullptr)
 {

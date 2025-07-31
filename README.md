@@ -1,4 +1,4 @@
-# Camera Server Qt6
+# Visco Connect v2.1.5
 
 IP Camera Port Forwarding Application built with Qt 6.5.3 and C++.
 
@@ -124,7 +124,7 @@ Required files:
 Start the application with the graphical interface:
 ```batch
 cd build\Release
-CameraServerQt6.exe
+ViscoConnect.exe
 ```
 
 ### Service Mode
@@ -136,7 +136,7 @@ Install and run as Windows service:
 
 Or install manually:
 ```batch
-CameraServerQt6.exe --service
+ViscoConnect.exe --service
 ```
 
 ## Camera Configuration
@@ -187,14 +187,14 @@ rtsp://admin:password123@10.0.0.2:8553/cam/realmonitor
 
 ## Configuration Files
 
-- **Config Location**: `%LOCALAPPDATA%\CameraServer\config.json`
-- **Log Location**: `%LOCALAPPDATA%\CameraServer\camera-server.log`
+- **Config Location**: `%LOCALAPPDATA%\ViscoConnect\config.json`
+- **Log Location**: `%LOCALAPPDATA%\ViscoConnect\visco-connect.log`
 - **Example Config**: See `config.example.json` in project root
 
 ## System Tray Features
 
 When minimized to system tray, access these features:
-- **Show Camera Server**: Restore main window
+- **Show Visco Connect**: Restore main window
 - **Enable All Cameras**: Start all enabled cameras
 - **Disable All Cameras**: Stop all running cameras  
 - **Quit**: Exit application completely
@@ -204,7 +204,7 @@ When minimized to system tray, access these features:
 ### Install Service
 1. Open main application
 2. **Service** menu → **Install Service**
-3. Service will be installed as "Camera Server Qt6"
+3. Service will be installed as "Visco Connect Service"
 
 ### Uninstall Service
 1. **Service** menu → **Uninstall Service**
@@ -224,7 +224,7 @@ The application provides four logging levels:
 - **ERROR**: Critical errors and failures
 
 Log files are automatically rotated and stored in:
-`%LOCALAPPDATA%\CameraServer\camera-server.log`
+`%LOCALAPPDATA%\ViscoConnect\visco-connect.log`
 
 ## Troubleshooting
 

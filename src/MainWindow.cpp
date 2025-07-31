@@ -8,6 +8,7 @@
 #include "EchoServer.h"
 #include "PingResponder.h"
 #include <QApplication>
+#include <QScreen>
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QVBoxLayout>
@@ -45,13 +46,14 @@ class CameraConfigDialog : public QDialog
 {
     Q_OBJECT
 
-public:
-    explicit CameraConfigDialog(const CameraConfig& camera = CameraConfig(), QWidget *parent = nullptr)
+public:    explicit CameraConfigDialog(const CameraConfig& camera = CameraConfig(), QWidget *parent = nullptr)
         : QDialog(parent), m_camera(camera)
     {
         setWindowTitle(camera.name().isEmpty() ? "Add Camera" : "Edit Camera");
         setModal(true);
-        resize(400, 300);
+        setMinimumSize(500, 400);
+        setMaximumSize(800, 600);
+        resize(550, 450);
         
         setupUI();
         loadCamera();
@@ -149,10 +151,10 @@ private:    void setupUI()
         // RTSP URL preview
         m_rtspPreviewGroup = new QGroupBox("RTSP URL Preview", this);
         QVBoxLayout* rtspLayout = new QVBoxLayout(m_rtspPreviewGroup);
-        
-        m_rtspUrlLabel = new QLabel("rtsp://username:password@192.168.1.100:554/stream", this);
+          m_rtspUrlLabel = new QLabel("rtsp://username:password@192.168.1.100:554/stream", this);
         m_rtspUrlLabel->setWordWrap(true);
-        m_rtspUrlLabel->setStyleSheet("QLabel { background-color: #f0f0f0; padding: 5px; border: 1px solid #ccc; }");
+        m_rtspUrlLabel->setMinimumHeight(40);
+        m_rtspUrlLabel->setStyleSheet("QLabel { background-color: #f0f0f0; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; }");
         m_rtspUrlLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         
         QPushButton* copyUrlButton = new QPushButton("Copy to Clipboard", this);
@@ -233,13 +235,13 @@ private slots:
             m_passwordVisibilityButton->setToolTip("Show Password");
         }
     }
-    
-    void showCredentialPresets()
+      void showCredentialPresets()
     {
         QDialog presetDialog(this);
         presetDialog.setWindowTitle("Common Camera Credentials");
         presetDialog.setModal(true);
-        presetDialog.resize(400, 300);
+        presetDialog.setMinimumSize(450, 350);
+        presetDialog.resize(500, 400);
         
         QVBoxLayout* layout = new QVBoxLayout(&presetDialog);
         
@@ -418,13 +420,14 @@ class CameraInfoDialog : public QDialog
 {
     Q_OBJECT
 
-public:
-    explicit CameraInfoDialog(const CameraConfig& camera, QWidget *parent = nullptr)
+public:    explicit CameraInfoDialog(const CameraConfig& camera, QWidget *parent = nullptr)
         : QDialog(parent), m_camera(camera)
     {
         setWindowTitle(QString("Camera Information - %1").arg(camera.name()));
         setModal(true);
-        resize(600, 500);
+        setMinimumSize(700, 600);
+        setMaximumSize(1000, 800);
+        resize(750, 650);
         
         setupUI();
         updateRtspInfo();
@@ -726,10 +729,11 @@ public:
         : QDialog(parent)
         , m_discovery(nullptr)
         , m_isScanning(false)
-    {
-        setWindowTitle("Discover Cameras");
+    {        setWindowTitle("Discover Cameras");
         setModal(true);
-        resize(800, 600);
+        setMinimumSize(950, 750);
+        setMaximumSize(1300, 1000);
+        resize(1000, 800);
         
         setupUI();
         setupDiscovery();
@@ -969,8 +973,12 @@ MainWindow::MainWindow(QWidget *parent)
     , m_isClosingToTray(false)
     , m_forceQuit(false)
     , m_pingProcess(nullptr)
-{    setWindowTitle("Camera Server Qt6");
-    setMinimumSize(800, 600);
+{    setWindowTitle("Visco Connect v2.1.5 - Demo Build (Verbose Logging Enabled)");
+    setMinimumSize(1000, 800);
+    setMaximumSize(1920, 1200); // Increased max height for better content fit
+    
+    // Set a reasonable default size with more height
+    resize(1200, 900);
       // Initialize camera manager
     LOG_INFO("Creating CameraManager...", "MainWindow");
     m_cameraManager = new CameraManager(this);
@@ -1092,12 +1100,11 @@ void MainWindow::appendLog(const QString& message)
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
-{
-    // If the system tray is available and we're not forcing quit, minimize to tray
+{    // If the system tray is available and we're not forcing quit, minimize to tray
     if (m_trayManager && m_trayManager->isVisible() && !m_forceQuit) {
         hide();
         if (m_trayManager) {
-            m_trayManager->showNotification("Camera Server Qt6", 
+            m_trayManager->showNotification("Visco Connect", 
                 "Application was minimized to tray. Right-click the tray icon for options.");
         }
         event->ignore();
@@ -1123,12 +1130,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::changeEvent(QEvent *event)
 {
     if (event->type() == QEvent::WindowStateChange) {
-        if (isMinimized() && m_trayManager && m_trayManager->isVisible()) {
-            // Hide to tray when minimized
+        if (isMinimized() && m_trayManager && m_trayManager->isVisible()) {            // Hide to tray when minimized
             QTimer::singleShot(100, this, [this]() {
                 hide();
                 if (m_trayManager) {
-                    m_trayManager->showNotification("Camera Server Qt6", 
+                    m_trayManager->showNotification("Visco Connect", 
                         "Application minimized to system tray");
                 }
             });
@@ -1333,12 +1339,16 @@ void MainWindow::toggleAutoStart()
 
 void MainWindow::showAbout()
 {
-    QMessageBox::about(this, "About Camera Server Qt6",
-                      "Camera Server Qt6\n\n"
-                      "IP Camera Port Forwarding Application\n"
-                      "Built with Qt 6.5.3\n\n"
-                      "This application provides port forwarding for IP cameras\n"
-                      "across VPN connections with P2P connectivity.");
+    QMessageBox::about(this, "About Visco Connect",
+                      "Visco Connect v2.1.5\n\n"
+                      "Demo Build - Verbose Logging Enabled\n\n"
+                      "An advanced IP camera port forwarding solution.\n\n"
+                      "Features:\n"
+                      "• RTSP camera port forwarding\n"
+                      "• Auto-discovery of network cameras\n"
+                      "• System tray integration\n"
+                      "• Windows service support\n"
+                      "• Comprehensive logging");
 }
 
 void MainWindow::onCameraSelectionChanged()
@@ -1668,6 +1678,19 @@ void MainWindow::createCentralWidget()
     m_cameraTable->setHorizontalHeaderLabels(headers);
     m_cameraTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_cameraTable->setAlternatingRowColors(true);
+    
+    // Set specific column widths for better text display
+    m_cameraTable->setColumnWidth(0, 35);   // #
+    m_cameraTable->setColumnWidth(1, 120);  // Name
+    m_cameraTable->setColumnWidth(2, 80);   // Brand
+    m_cameraTable->setColumnWidth(3, 80);   // Model
+    m_cameraTable->setColumnWidth(4, 120);  // IP Address
+    m_cameraTable->setColumnWidth(5, 60);   // Port
+    m_cameraTable->setColumnWidth(6, 90);   // External Port
+    m_cameraTable->setColumnWidth(7, 80);   // Status
+    m_cameraTable->setColumnWidth(8, 90);   // Connections
+    m_cameraTable->setColumnWidth(9, 120);  // Data Transferred
+    // Actions column will stretch to fill remaining space
     m_cameraTable->horizontalHeader()->setStretchLastSection(true);
     
     cameraLayout->addWidget(m_cameraTable);      // Camera buttons
@@ -1713,10 +1736,9 @@ void MainWindow::createCentralWidget()
     
     // Log viewer group
     m_logGroupBox = new QGroupBox("Application Log");
-    QVBoxLayout* logLayout = new QVBoxLayout(m_logGroupBox);
-    
-    m_logTextEdit = new QTextEdit;
-    m_logTextEdit->setMaximumHeight(200);
+    QVBoxLayout* logLayout = new QVBoxLayout(m_logGroupBox);    m_logTextEdit = new QTextEdit;
+    m_logTextEdit->setMaximumHeight(300);
+    m_logTextEdit->setMinimumHeight(180);
     m_logTextEdit->setReadOnly(true);
     m_logTextEdit->setFont(QFont("Consolas", 9));
     
@@ -1738,19 +1760,16 @@ void MainWindow::createCentralWidget()
     QWidget* leftWidget = new QWidget;
     QVBoxLayout* leftLayout = new QVBoxLayout(leftWidget);
     leftLayout->addWidget(m_cameraGroupBox);
-    leftLayout->addWidget(m_serviceGroupBox);
-    
-    // Right side - VPN controls
+    leftLayout->addWidget(m_serviceGroupBox);    // Right side - VPN controls
     m_vpnWidget = new VpnWidget;
-    m_vpnWidget->setMaximumWidth(300);
-    m_vpnWidget->setMinimumWidth(250);
+    m_vpnWidget->setMaximumWidth(380);
+    m_vpnWidget->setMinimumWidth(320);
     
     topMainLayout->addWidget(leftWidget, 2);
     topMainLayout->addWidget(m_vpnWidget, 1);
     
-    m_mainSplitter->addWidget(topWidget);
-    m_mainSplitter->addWidget(m_logGroupBox);
-    m_mainSplitter->setSizes({500, 200});
+    m_mainSplitter->addWidget(topWidget);    m_mainSplitter->addWidget(m_logGroupBox);
+    m_mainSplitter->setSizes({650, 250}); // Give even more space to main content and slightly more to logs
     
     // Main layout
     QVBoxLayout* mainLayout = new QVBoxLayout(m_centralWidget);
@@ -1988,13 +2007,33 @@ void MainWindow::loadSettings()
 {
     QSettings settings;
     
-    // Window geometry
-    restoreGeometry(settings.value("geometry").toByteArray());
+    // Window geometry with safe fallbacks
+    QByteArray geometry = settings.value("geometry").toByteArray();
+    if (!geometry.isEmpty()) {
+        restoreGeometry(geometry);
+    } else {
+        // First time startup - center on screen with reasonable size
+        resize(1200, 800);
+        QScreen* screen = QApplication::primaryScreen();
+        if (screen) {
+            QRect screenGeometry = screen->availableGeometry();
+            int x = (screenGeometry.width() - width()) / 2;
+            int y = (screenGeometry.height() - height()) / 2;
+            move(x, y);
+        }
+    }
+    
     restoreState(settings.value("windowState").toByteArray());
     
     // Splitter state
     if (m_mainSplitter) {
-        m_mainSplitter->restoreState(settings.value("splitterState").toByteArray());
+        QByteArray splitterState = settings.value("splitterState").toByteArray();
+        if (!splitterState.isEmpty()) {
+            m_mainSplitter->restoreState(splitterState);
+        } else {
+            // Default splitter sizes if no saved state
+            m_mainSplitter->setSizes({600, 200});
+        }
     }
     
     // Auto-start setting

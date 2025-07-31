@@ -322,20 +322,22 @@ void VpnWidget::onWireGuardLogMessage(const QString& message)
 void VpnWidget::setupUI()
 {
     m_mainLayout = new QVBoxLayout(this);
-    m_mainLayout->setSpacing(10);
+    m_mainLayout->setSpacing(8);
+    m_mainLayout->setContentsMargins(8, 8, 8, 8);
     
     setupConnectionGroup();
     setupConfigGroup();
     setupStatusGroup();
     setupPingTestGroup();
     
-    // Add stretch to push everything to the top
-    m_mainLayout->addStretch();
+    // Remove stretch to allow natural sizing
+    // m_mainLayout->addStretch(); - Commented out to prevent compression
 }
 
 void VpnWidget::setupConnectionGroup()
 {
     m_connectionGroup = new QGroupBox("VPN Connection");
+    m_connectionGroup->setMinimumHeight(120);
     m_mainLayout->addWidget(m_connectionGroup);
     
     QVBoxLayout* groupLayout = new QVBoxLayout(m_connectionGroup);
@@ -392,6 +394,7 @@ void VpnWidget::setupConnectionGroup()
 void VpnWidget::setupConfigGroup()
 {
     m_configGroup = new QGroupBox("Configuration Management");
+    m_configGroup->setMinimumHeight(80);
     m_mainLayout->addWidget(m_configGroup);
     
     QVBoxLayout* groupLayout = new QVBoxLayout(m_configGroup);
@@ -420,6 +423,7 @@ void VpnWidget::setupConfigGroup()
 void VpnWidget::setupStatusGroup()
 {
     m_statusGroup = new QGroupBox("Connection Status");
+    m_statusGroup->setMinimumHeight(90);
     m_mainLayout->addWidget(m_statusGroup);
     
     QVBoxLayout* groupLayout = new QVBoxLayout(m_statusGroup);
@@ -441,6 +445,7 @@ void VpnWidget::setupStatusGroup()
 void VpnWidget::setupPingTestGroup()
 {
     m_pingTestGroup = new QGroupBox("Connectivity Test");
+    m_pingTestGroup->setMinimumHeight(180);
     m_mainLayout->addWidget(m_pingTestGroup);
     
     QVBoxLayout* groupLayout = new QVBoxLayout(m_pingTestGroup);
@@ -463,10 +468,10 @@ void VpnWidget::setupPingTestGroup()
     m_pingStatusLabel = new QLabel("Status: Ready to test");
     m_pingStatusLabel->setStyleSheet("font-weight: bold;");
     groupLayout->addWidget(m_pingStatusLabel);
-    
-    // Output text area
+      // Output text area
     m_pingOutputText = new QTextEdit;
-    m_pingOutputText->setMaximumHeight(120);
+    m_pingOutputText->setMaximumHeight(140);
+    m_pingOutputText->setMinimumHeight(100);
     m_pingOutputText->setReadOnly(true);
     m_pingOutputText->setFont(QFont("Consolas", 9));
     m_pingOutputText->setPlainText("Click 'Run Ping Test' to test VPN connectivity to 10.0.0.1\n\nThis test will send 4 ping packets to verify that your VPN connection\nis working properly and can reach the VPN server's internal network.");
