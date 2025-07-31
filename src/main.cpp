@@ -3,12 +3,14 @@
 #include <QSystemTrayIcon>
 #include <QDir>
 #include <QStandardPaths>
+#include <QTimer>
 #include <windows.h>
 
 #include "MainWindow.h"
 #include "ConfigManager.h"
 #include "Logger.h"
 #include "WindowsService.h"
+#include "FirewallManager.h"
 
 // Forward declaration for WireGuard service function
 extern "C" {
@@ -70,8 +72,7 @@ int main(int argc, char *argv[])
     LOG_INFO("=== Visco Connect v2.1.5 Starting ===", "Main");
     LOG_INFO(QString("Version: %1").arg(app.applicationVersion()), "Main");
     LOG_INFO(QString("Run as service: %1").arg(runAsService ? "Yes" : "No"), "Main");
-    
-    // Load configuration
+      // Load configuration
     if (!ConfigManager::instance().loadConfig()) {
         LOG_ERROR("Failed to load configuration", "Main");
         if (!runAsService) {
@@ -79,6 +80,24 @@ int main(int argc, char *argv[])
         }
         return 1;
     }
+    
+    // Initialize and check firewall rules (with a small delay to allow system to settle)
+    QTimer::singleShot(1000, [&app]() {
+        LOG_INFO("Checking firewall rules...", "Main");
+        FirewallManager firewallManager;
+        
+        if (!firewallManager.areFirewallRulesPresent()) {
+            LOG_INFO("Firewall rules missing, attempting to add them", "Main");
+            
+            if (firewallManager.addFirewallRules()) {
+                LOG_INFO("Firewall rules added successfully", "Main");
+            } else {
+                LOG_WARNING("Failed to add firewall rules automatically. Please run the application as Administrator or manually add firewall rules using setup_firewall.bat", "Main");
+            }
+        } else {
+            LOG_INFO("Firewall rules already present", "Main");
+        }
+    });
     
     if (runAsService) {
         // Running as Windows service

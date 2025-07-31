@@ -61,3 +61,23 @@ Thumbs.db
 
 # Lock files
 *.lock
+
+# Build setup and installer files
+installer/output/
+installer/*.wixobj
+installer/*.wixpdb
+installer/HarvestedFiles.wxs
+*.msi
+*.msm
+
+# WiX Toolset temporary files
+*.wixproj.user
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+
+# WireGuard DLLs (these should be managed separately)
+tunnel.dll
+wireguard.dll
