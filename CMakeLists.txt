@@ -108,8 +108,8 @@ set(RESOURCES
 # Include directories
 include_directories(include)
 
-# Create executable
-add_executable(ViscoConnect ${SOURCES} ${HEADERS} ${RESOURCES})
+# Create executable (WIN32 suppresses console window)
+add_executable(ViscoConnect WIN32 ${SOURCES} ${HEADERS} ${RESOURCES})
 
 # Link Qt6 libraries
 target_link_libraries(ViscoConnect PRIVATE Qt6::Core Qt6::Widgets Qt6::Network)

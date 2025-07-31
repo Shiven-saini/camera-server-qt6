@@ -14,12 +14,14 @@
 
 // Constants
 const QStringList WireGuardConfigDialog::DEFAULT_DNS_SERVERS = {
+    "",  // Empty DNS (no default DNS servers)
     "8.8.8.8, 8.8.4.4",
     "1.1.1.1, 1.0.0.1",
     "9.9.9.9, 149.112.112.112"
 };
 
 const QStringList WireGuardConfigDialog::COMMON_ALLOWED_IPS = {
+    "10.0.0.1/24",  // New default
     "0.0.0.0/0, ::/0",
     "0.0.0.0/0",
     "10.0.0.0/8",
@@ -123,12 +125,11 @@ void WireGuardConfigDialog::setConfiguration(const WireGuardConfig& config)
         m_peerEndpointEdit->setText(firstPeer.endpoint);
         m_peerAllowedIPsEdit->setText(firstPeer.allowedIPs.join(", "));
         m_peerPresharedKeyEdit->setText(firstPeer.presharedKey);
-        m_peerKeepaliveSpin->setValue(firstPeer.persistentKeepalive);
-    } else {
+        m_peerKeepaliveSpin->setValue(firstPeer.persistentKeepalive);    } else {
         // Clear peer fields if no peers
         m_peerPublicKeyEdit->clear();
         m_peerEndpointEdit->clear();
-        m_peerAllowedIPsEdit->setText("0.0.0.0/0, ::/0");
+        m_peerAllowedIPsEdit->setText("10.0.0.1/24"); // New default
         m_peerPresharedKeyEdit->clear();
         m_peerKeepaliveSpin->setValue(25);
     }
@@ -385,7 +386,7 @@ void WireGuardConfigDialog::resetToDefaults()
     m_config = WireGuardConfig();
     m_config.interfaceConfig.name = "wg0";
     m_config.interfaceConfig.addresses = QStringList() << "10.0.0.2/24";
-    m_config.interfaceConfig.dns = QStringList() << "8.8.8.8" << "8.8.4.4";
+    m_config.interfaceConfig.dns = QStringList(); // Empty DNS servers by default
     
     setConfiguration(m_config);
 }
@@ -496,16 +497,15 @@ void WireGuardConfigDialog::setupUI()
     m_addressEdit = new QLineEdit;
     m_addressEdit->setPlaceholderText("e.g., 10.0.0.2/24");
     networkForm->addRow("IP Address*:", m_addressEdit);
-    
-    m_dnsEdit = new QLineEdit;
-    m_dnsEdit->setPlaceholderText("e.g., 8.8.8.8, 8.8.4.4");
-    m_dnsEdit->setText("8.8.8.8, 8.8.4.4"); // Set default
+      m_dnsEdit = new QLineEdit;
+    m_dnsEdit->setPlaceholderText("e.g., 8.8.8.8, 8.8.4.4 (optional)");
+    m_dnsEdit->setText(""); // Empty by default
     networkForm->addRow("DNS Servers:", m_dnsEdit);
     
     m_listenPortSpin = new QSpinBox;
     m_listenPortSpin->setRange(0, 65535);
-    m_listenPortSpin->setSpecialValueText("Auto-assign");
-    m_listenPortSpin->setValue(0);
+    m_listenPortSpin->setSpecialValueText("Auto");
+    m_listenPortSpin->setValue(0); // Auto by default
     networkForm->addRow("Listen Port:", m_listenPortSpin);
       // Simple Peer Configuration Group
     QGroupBox* peerGroup = new QGroupBox("Peer Configuration");
@@ -520,10 +520,9 @@ void WireGuardConfigDialog::setupUI()
     m_peerEndpointEdit = new QLineEdit;
     m_peerEndpointEdit->setPlaceholderText("e.g., vpn.example.com:51820");
     peerForm->addRow("Server Endpoint*:", m_peerEndpointEdit);
-    
-    m_peerAllowedIPsEdit = new QLineEdit;
-    m_peerAllowedIPsEdit->setPlaceholderText("e.g., 0.0.0.0/0 (route all traffic)");
-    m_peerAllowedIPsEdit->setText("0.0.0.0/0, ::/0"); // Set default
+      m_peerAllowedIPsEdit = new QLineEdit;
+    m_peerAllowedIPsEdit->setPlaceholderText("e.g., 10.0.0.1/24 or 0.0.0.0/0 (route all traffic)");
+    m_peerAllowedIPsEdit->setText("10.0.0.1/24"); // New default
     peerForm->addRow("Allowed IPs:", m_peerAllowedIPsEdit);
     
     m_peerPresharedKeyEdit = new QLineEdit;
