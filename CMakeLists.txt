@@ -79,6 +79,7 @@ set(SOURCES
     src/NetworkInterfaceManager.cpp
     src/EchoServer.cpp
     src/PingResponder.cpp
+    src/FirewallManager.cpp
 )
 
 # Header files
@@ -98,6 +99,7 @@ set(HEADERS
     include/NetworkInterfaceManager.h
     include/EchoServer.h
     include/PingResponder.h
+    include/FirewallManager.h
 )
 
 # Resource files
@@ -158,5 +160,6 @@ endif()
 
 # Set output directory
 set_target_properties(ViscoConnect PROPERTIES
+    OUTPUT_NAME "Visco Connect"
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )

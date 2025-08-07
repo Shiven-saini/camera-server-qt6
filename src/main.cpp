@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QIcon>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
 #include <QDir>
@@ -46,6 +47,8 @@ int main(int argc, char *argv[])
         return result ? 0 : 1;
     }
       QApplication app(argc, argv);
+      // Set application and window icon
+      app.setWindowIcon(QIcon(":/icons/logo.ico"));
     
     // Set application properties
     app.setApplicationName("ViscoConnect");
@@ -129,6 +132,8 @@ int main(int argc, char *argv[])
         // Create main window
         LOG_INFO("Creating main window...", "Main");
         MainWindow window;
+        // Set the main window icon
+        window.setWindowIcon(QIcon(":/icons/logo.ico"));
         LOG_INFO("Main window created", "Main");
         
         // Show the main window initially

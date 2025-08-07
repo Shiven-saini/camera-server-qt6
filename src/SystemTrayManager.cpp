@@ -4,6 +4,7 @@
 #include "Logger.h"
 #include <QApplication>
 #include <QMessageBox>
+#include <QIcon>
 
 SystemTrayManager::SystemTrayManager(MainWindow* mainWindow, CameraManager* cameraManager, QObject *parent)
     : QObject(parent)
@@ -138,8 +139,17 @@ void SystemTrayManager::createTrayIcon()
 {
     m_trayIcon = new QSystemTrayIcon(this);
     
-    // Try to load custom icon first, fallback to system icon
-    QIcon icon(":/icons/camera_server_icon.svg");
+    // Try to load custom icon first (use new logo), fallback to original and then system icon
+    QIcon icon(":/icons/logo.ico");
+    if (icon.isNull()) {
+        icon = QIcon(":/icons/logo.png");
+    }
+    if (icon.isNull()) {
+        icon = QIcon(":/icons/camera_server_icon.svg");
+    }
+    if (icon.isNull()) {
+        icon = QApplication::style()->standardIcon(QStyle::SP_ComputerIcon);
+    }
     if (icon.isNull()) {
         icon = QApplication::style()->standardIcon(QStyle::SP_ComputerIcon);
     }

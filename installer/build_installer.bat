@@ -35,16 +35,16 @@ if not exist "%BUILD_DIR%" (
     exit /b 1
 )
 
-echo Step 1: Creating icon file...
-REM Check for ICO file
-if exist "%INSTALLER_DIR%\camera_server_icon.ico" (
-    echo Icon file found: camera_server_icon.ico
+echo Step 1: Copying application icon...
+REM Copy logo.ico from project resources into installer directory
+if exist "%PROJECT_ROOT%\resources\logo.ico" (
+    copy /Y "%PROJECT_ROOT%\resources\logo.ico" "%INSTALLER_DIR%\logo.ico" >nul
+    echo Icon file copied: logo.ico
 ) else (
-    echo WARNING: Icon file not found. Creating a default reference...
-    REM Create a simple default icon reference
-    copy NUL "%INSTALLER_DIR%\camera_server_icon.ico" >nul 2>&1
-    echo Default icon placeholder created.
-    echo You can replace it with a real ICO file for better appearance.
+    echo ERROR: resources\logo.ico not found in project resources.
+    echo Please ensure logo.ico exists in the resources directory.
+    pause
+    exit /b 1
 )
 
 echo Step 2: Harvesting files from build directory...
