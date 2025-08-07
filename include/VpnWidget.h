@@ -2,18 +2,20 @@
 #define VPNWIDGET_H
 
 #include <QWidget>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QGroupBox>
-#include <QComboBox>
-#include <QPushButton>
-#include <QLabel>
-#include <QProgressBar>
-#include <QTimer>
-#include <QFrame>
-#include <QProcess>
-#include <QTextEdit>
-#include "WireGuardManager.h"
+#include <QDateTime>
+#include "WireGuardManager.h" // Full include for WireGuardManager::ConnectionStatus enum
+
+// Forward-declare Qt classes to reduce header dependencies and improve compile times
+QT_BEGIN_NAMESPACE
+class QGroupBox;
+class QPushButton;
+class QLabel;
+class QProgressBar;
+class QTextEdit;
+class QProcess;
+class QTimer;
+class QVBoxLayout;
+QT_END_NAMESPACE
 
 class VpnWidget : public QWidget
 {
@@ -28,79 +30,71 @@ signals:
     void logMessage(const QString& message);
 
 private slots:
+    // User-initiated actions
+    void onLoadConfigClicked();
     void onConnectClicked();
     void onDisconnectClicked();
-    void onCreateConfigClicked();
-    void onEditConfigClicked();
-    void onDeleteConfigClicked();    void onRefreshConfigsClicked();
-    void onConfigSelectionChanged();
     void onPingTestClicked();
+
+    // Slots for QProcess (Ping)
     void onPingFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void onPingError(QProcess::ProcessError error);
     
-    // WireGuard Manager slots
+    // Slots for WireGuardManager signals
     void onConnectionStatusChanged(WireGuardManager::ConnectionStatus status);
     void onTransferStatsUpdated(uint64_t rxBytes, uint64_t txBytes);
-    void onConfigurationChanged();
     void onWireGuardError(const QString& error);
     void onWireGuardLogMessage(const QString& message);
 
+    // Internal timer slot
+    void updateConnectionStatus();
+
 private:
-    void setupUI();    void setupConnectionGroup();
+    // UI Setup
+    void setupUI();
     void setupConfigGroup();
+    void setupConnectionGroup();
     void setupStatusGroup();
     void setupPingTestGroup();
     void connectSignals();
+
+    // UI State Management
     void updateUI();
-    void updateConnectionStatus();
-    void updateTransferStats(uint64_t rxBytes, uint64_t txBytes);
-    void refreshConfigsList();
     QString getStatusText(WireGuardManager::ConnectionStatus status);
     QPixmap getStatusIcon(WireGuardManager::ConnectionStatus status);
     
     // Core components
     WireGuardManager* m_wireGuardManager;
     QTimer* m_statusUpdateTimer;
-    
-    // UI Components
+    QProcess* m_pingProcess;
+
+    // UI Components (pointers managed by Qt's parent-child system)
     QVBoxLayout* m_mainLayout;
     
-    // Connection group
+    QGroupBox* m_configGroup;
+    QPushButton* m_loadConfigButton;
+    QLabel* m_configPathLabel;
+    
     QGroupBox* m_connectionGroup;
-    QComboBox* m_configCombo;
     QPushButton* m_connectButton;
     QPushButton* m_disconnectButton;
-    QPushButton* m_refreshButton;
     QLabel* m_connectionStatusLabel;
     QLabel* m_connectionIconLabel;
+    QProgressBar* m_connectionProgress;
     
-    // Configuration group
-    QGroupBox* m_configGroup;
-    QPushButton* m_createConfigButton;
-    QPushButton* m_editConfigButton;
-    QPushButton* m_deleteConfigButton;
-    QLabel* m_configCountLabel;
-      // Status group
     QGroupBox* m_statusGroup;
     QLabel* m_currentConfigLabel;
     QLabel* m_uptimeLabel;
     QLabel* m_transferLabel;
-    QProgressBar* m_connectionProgress;
     
-    // Ping test group
     QGroupBox* m_pingTestGroup;
     QPushButton* m_pingTestButton;
     QLabel* m_pingStatusLabel;
     QTextEdit* m_pingOutputText;
-    QProcess* m_pingProcess;
-    
-    // Separator
-    QFrame* m_separator;
     
     // State tracking
-    WireGuardManager::ConnectionStatus m_lastStatus;
+    QString m_loadedConfigPath;
     QDateTime m_connectionStartTime;
-    bool m_isUpdatingConfigs;
 };
 
 #endif // VPNWIDGET_H
