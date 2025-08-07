@@ -12,6 +12,7 @@
 #include "Logger.h"
 #include "WindowsService.h"
 #include "FirewallManager.h"
+#include "AuthDialog.h"
 
 // Forward declaration for WireGuard service function
 extern "C" {
@@ -122,6 +123,13 @@ int main(int argc, char *argv[])
         // Running as regular application
         LOG_INFO("Starting GUI application", "Main");
         
+        // Show authentication dialog before main window
+        AuthDialog authDialog;
+        if (authDialog.exec() != QDialog::Accepted) {
+            LOG_INFO("User canceled login, exiting application", "Main");
+            return 0;
+        }
+
         // Check if system tray is available
         if (!QSystemTrayIcon::isSystemTrayAvailable()) {
             QMessageBox::critical(nullptr, "System Tray",

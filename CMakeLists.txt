@@ -75,6 +75,7 @@ set(SOURCES
     src/CameraDiscovery.cpp
     src/WireGuardManager.cpp
     src/WireGuardConfigDialog.cpp
+    src/AuthDialog.cpp
     src/VpnWidget.cpp
     src/NetworkInterfaceManager.cpp
     src/EchoServer.cpp
@@ -95,6 +96,7 @@ set(HEADERS
     include/CameraDiscovery.h
     include/WireGuardManager.h
     include/WireGuardConfigDialog.h
+    include/AuthDialog.h
     include/VpnWidget.h
     include/NetworkInterfaceManager.h
     include/EchoServer.h
