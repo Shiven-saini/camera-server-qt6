@@ -295,14 +295,8 @@ camera-server-qt6/
 - **SystemTrayManager**: System tray functionality
 - **MainWindow**: Main GUI interface
 
-## License
+## Contact me
+**Author:** Shiven Saini<br>
+**Email:** [shiven.career@proton.me](mailto:shiven.career@proton.me)
 
-This project is provided as-is for educational and development purposes.
 
-## Support
-
-For issues and questions:
-1. Check the troubleshooting section above
-2. Review log files for error details
-3. Verify network connectivity and camera settings
-4. Ensure Qt6 is properly installed and configured
