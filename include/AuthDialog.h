@@ -2,57 +2,46 @@
 #define AUTHDIALOG_H
 
 #include <QDialog>
+#include <QNetworkReply>        // for enum in slot
 
 QT_BEGIN_NAMESPACE
 class QLabel;
 class QLineEdit;
 class QPushButton;
-class QFrame;
-class QVBoxLayout;
-class QHBoxLayout;
+class QNetworkAccessManager;
 QT_END_NAMESPACE
 
 class AuthDialog : public QDialog
 {
     Q_OBJECT
-
 public:
     explicit AuthDialog(QWidget *parent = nullptr);
     ~AuthDialog();
 
+    static QString getCurrentAuthToken();
+    static void clearCurrentAuthToken();
+
 private slots:
     void onLoginClicked();
-    void onUsernameChanged();
-    void onPasswordChanged();
+    void onNetworkFinished();
+    void onNetworkError(QNetworkReply::NetworkError err);
 
 private:
-    void setupUI();
-    void setupStyles();
-    void setupConnections();
-    void setupLayouts();
-    void setupShadowEffects();
-    void updateLoginButtonState();
-    void showMessage(const QString &message, const QString &type = "info");
-    
-    // UI Components
-    QFrame *m_mainFrame;
-    QFrame *m_headerFrame;
-    QFrame *m_formFrame;
-    
-    QLabel *m_logoLabel;
-    QLabel *m_titleLabel;
-    QLabel *m_subtitleLabel;
-    QLabel *m_welcomeLabel;
-    
-    QLabel *m_usernameLabel;
-    QLineEdit *m_usernameEdit;
-    QLabel *m_passwordLabel;
-    QLineEdit *m_passwordEdit;
-    QPushButton *m_loginButton;
-    
-    QVBoxLayout *m_mainLayout;
-    QVBoxLayout *m_headerLayout;
-    QVBoxLayout *m_formLayout;
-};
+    void updateButtonState();
+    void performAuthentication(const QString &user, const QString &pass);
+    void showStatus(const QString &text, const QColor &col);
 
-#endif // AUTHDIALOG_H
+    // widgets
+    QLabel     *m_logoLbl;
+    QLabel     *m_titleLbl;
+    QLabel     *m_subLbl;
+    QLabel     *m_statusLbl;
+    QLineEdit  *m_userEdit;
+    QLineEdit  *m_passEdit;
+    QPushButton *m_loginBtn;
+
+    // networking
+    QNetworkAccessManager *m_netMgr;
+    QNetworkReply         *m_reply{};
+};
+#endif
