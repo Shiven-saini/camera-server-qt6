@@ -192,7 +192,10 @@ void VpnWidget::onConnectClicked()
     }
     
     m_connectionProgress->setVisible(true);
-    m_wireGuardManager->connectTunnel(m_loadedConfigPath);
+    // Pass the full path to use custom config files
+    if (!m_wireGuardManager->connectTunnel(m_loadedConfigPath)) {
+        QMessageBox::critical(this, tr("Connection Error"), tr("Failed to connect using the configuration: %1").arg(m_loadedConfigPath));
+    }
     updateUI();
 }
 

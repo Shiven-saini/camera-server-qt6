@@ -127,4 +127,92 @@ QTimer::singleShot(10, [this, selectedConfig]() {
 
 ---
 
-**Status**: ✅ **RESOLVED** - Both UI freezing and connection failure issues have been successfully addressed.
+### 5. **External Configuration File Support** ❌ → ✅ **FIXED** (August 8, 2025)
+
+**Problem**: The application could not load custom WireGuard configuration files from external locations (e.g., Downloads folder). When users loaded a `.conf` file from outside the application's config directory, the connection would fail with "Configuration file not found" error.
+
+**Root Cause**:
+- `connectTunnel()` method only supported config names, not absolute file paths
+- The method assumed all configurations were stored in the application's internal config directory
+- When VpnWidget passed an absolute file path, WireGuardManager treated it as a config name and looked for it in the wrong location
+
+**Solution**:
+- **Enhanced Path Detection**: Modified `connectTunnel()` to detect and handle absolute file paths
+- **Dual Path Support**: Added logic to distinguish between config names and absolute file paths
+- **Improved File Validation**: Enhanced file existence checking for both internal and external configs
+
+```cpp
+// Before: Only supported internal config names
+QString configPath = QDir(m_configDirectory).filePath(configName + CONFIG_FILE_EXTENSION);
+
+// After: Supports both internal configs and external file paths
+QString pathToUse;
+QString configKey;
+QFileInfo info(configName);
+if (info.isAbsolute() && info.exists()) {
+    pathToUse = configName;  // Use external file directly
+    configKey = info.baseName();
+} else {
+    configKey = configName;
+    pathToUse = QDir(m_configDirectory).filePath(configKey + CONFIG_FILE_EXTENSION);
+}
+```
+
+### 6. **Service DLL Loading Issue** ❌ → ✅ **FIXED** (August 8, 2025)
+
+**Problem**: Windows services created by the application were failing to start because the WireGuard DLLs (`tunnel.dll` and `wireguard.dll`) could not be found when running in service context.
+
+**Root Cause**:
+- When running as a Windows service, the working directory is different (usually `C:\Windows\System32`)
+- DLL loading with relative paths failed in service context
+- The service executable couldn't locate the required WireGuard DLLs
+
+**Solution**:
+- **Application Directory DLL Loading**: Modified `loadDlls()` to load DLLs from the application's directory using full paths
+- **Path Resolution**: Added logic to resolve the application directory and construct full DLL paths
+- **Service Context Support**: Ensured DLL loading works correctly both in GUI mode and service context
+
+```cpp
+// Enhanced DLL loading with full paths
+QString appDir = QCoreApplication::applicationDirPath();
+QString tunnelDllPath = QDir(appDir).filePath("tunnel.dll");
+QString wireguardDllPath = QDir(appDir).filePath("wireguard.dll");
+
+// Load with full paths to work in service context
+std::wstring wideTunnelPath = tunnelDllPath.toStdWString();
+std::wstring wideWireguardPath = wireguardDllPath.toStdWString();
+m_tunnelDll = LoadLibrary(wideTunnelPath.c_str());
+m_wireguardDll = LoadLibrary(wideWireguardPath.c_str());
+```
+
+### 7. **Standard Library Support** ✅ **IMPROVED** (August 8, 2025)
+
+**Enhancement**: Added proper C++ standard library support for wide string operations required by Windows API calls.
+
+**Changes**:
+- Added `#include <string>` for `std::wstring` support
+- Ensured proper string conversion for Windows service creation
+- Enhanced compatibility with Windows API functions
+
+### Files Modified (August 8, 2025):
+
+1. **`src/WireGuardManager.cpp`**:
+   - Enhanced `connectTunnel()` to support absolute file paths
+   - Modified `loadDlls()` to use application directory paths
+   - Added `#include <string>` for std::wstring support
+   - Improved file path validation and handling
+
+2. **`src/VpnWidget.cpp`**:
+   - Modified `onConnectClicked()` to pass absolute file paths correctly
+   - Enhanced error handling for external configuration files
+
+## Testing Results (Latest)
+
+✅ **External Config Loading**: Successfully loads `.conf` files from any directory (e.g., Downloads)  
+✅ **Service Creation**: Windows services are created and started successfully  
+✅ **DLL Loading**: WireGuard DLLs load correctly in both GUI and service contexts  
+✅ **Connection Establishment**: VPN tunnels connect successfully with external configs  
+
+---
+
+**Status**: ✅ **FULLY RESOLVED** - All WireGuard connection issues have been successfully addressed, including external configuration file support and service DLL loading problems.

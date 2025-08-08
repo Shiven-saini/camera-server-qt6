@@ -6,6 +6,7 @@
 #include <QStandardPaths>
 #include <QTimer>
 #include <windows.h>
+#include <string>
 
 #include "MainWindow.h"
 #include "ConfigManager.h"
@@ -20,16 +21,29 @@ extern "C" {
 }
 
 int main(int argc, char *argv[])
-{
-    // Check for WireGuard service mode first (before creating QApplication)
+{    // Check for WireGuard service mode first (before creating QApplication)
     if (argc == 3 && QString::fromLocal8Bit(argv[1]) == "/service") {
         // This is a WireGuard tunnel service call
         QString configPath = QString::fromLocal8Bit(argv[2]);
         
-        // Load tunnel.dll and call WireGuardTunnelService
-        HMODULE tunnelDll = LoadLibraryA("tunnel.dll");
+        // Get the directory where the executable is located
+        char exePath[MAX_PATH];
+        GetModuleFileNameA(NULL, exePath, MAX_PATH);
+        std::string exeDir = std::string(exePath);
+        size_t lastSlash = exeDir.find_last_of("\\/");
+        if (lastSlash != std::string::npos) {
+            exeDir = exeDir.substr(0, lastSlash);
+        }
+        
+        // Try to load tunnel.dll from the executable directory
+        std::string tunnelDllPath = exeDir + "\\tunnel.dll";
+        HMODULE tunnelDll = LoadLibraryA(tunnelDllPath.c_str());
         if (!tunnelDll) {
-            return 1;  // Failed to load tunnel.dll
+            // Fallback: try loading from current directory
+            tunnelDll = LoadLibraryA("tunnel.dll");
+            if (!tunnelDll) {
+                return 1;  // Failed to load tunnel.dll
+            }
         }
         
         WireGuardTunnelServiceFunc tunnelServiceFunc = 

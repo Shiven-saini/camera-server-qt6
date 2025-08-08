@@ -199,10 +199,21 @@ bool WireGuardManager::connectTunnel(const QString& configName)
         emit errorOccurred("A tunnel is already connected or connecting");
         return false;
     }
-    
-    QString configPath = QDir(m_configDirectory).filePath(configName + CONFIG_FILE_EXTENSION);
-    if (!QFile::exists(configPath)) {
-        emit errorOccurred(QString("Configuration file not found: %1").arg(configName));
+
+    // Support loading external config paths directly
+    QString pathToUse;
+    QString configKey;
+    QFileInfo info(configName);
+    if (info.isAbsolute() && info.exists()) {
+        pathToUse = configName;
+        configKey = info.baseName();
+    } else {
+        configKey = configName;
+        pathToUse = QDir(m_configDirectory).filePath(configKey + CONFIG_FILE_EXTENSION);
+    }
+
+    if (!QFile::exists(pathToUse)) {
+        emit errorOccurred(QString("Configuration file not found: %1").arg(pathToUse));
         return false;
     }
     
@@ -214,36 +225,36 @@ bool WireGuardManager::connectTunnel(const QString& configName)
     
     m_connectionStatus = Connecting;
     emit connectionStatusChanged(m_connectionStatus);
-    emit logMessage(QString("Connecting to WireGuard tunnel: %1").arg(configName));
+    emit logMessage(QString("Connecting to WireGuard tunnel: %1").arg(configKey));
     
-    QString serviceName = generateServiceName(configName);
+    QString serviceName = generateServiceName(configKey);
     
     try {
-        if (createTunnelService(configPath, serviceName)) {
+        if (createTunnelService(pathToUse, serviceName)) {
             if (startTunnelService(serviceName)) {
-                m_currentConfigName = configName;
+                m_currentConfigName = configKey;
                 m_currentServiceName = serviceName;
                 m_connectionStatus = Connected;
                 m_statsTimer->start();
                 
                 emit connectionStatusChanged(m_connectionStatus);
-                emit logMessage(QString("Successfully connected to WireGuard tunnel: %1").arg(configName));
+                emit logMessage(QString("Successfully connected to WireGuard tunnel: %1").arg(configKey));
                 return true;
             } else {
                 removeTunnelService(serviceName);
-                emit logMessage(QString("Failed to start tunnel service for: %1").arg(configName));
+                emit logMessage(QString("Failed to start tunnel service for: %1").arg(configKey));
             }
         } else {
-            emit logMessage(QString("Failed to create tunnel service for: %1").arg(configName));
+            emit logMessage(QString("Failed to create tunnel service for: %1").arg(configKey));
         }
     } catch (...) {
-        emit errorOccurred(QString("Exception occurred while connecting to tunnel: %1").arg(configName));
+        emit errorOccurred(QString("Exception occurred while connecting to tunnel: %1").arg(configKey));
         removeTunnelService(serviceName);
     }
     
     m_connectionStatus = Error;
     emit connectionStatusChanged(m_connectionStatus);
-    emit errorOccurred(QString("Failed to connect to WireGuard tunnel: %1").arg(configName));
+    emit errorOccurred(QString("Failed to connect to WireGuard tunnel: %1").arg(configKey));
     return false;
 }
 
