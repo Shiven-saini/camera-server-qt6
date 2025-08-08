@@ -79,20 +79,7 @@ If you prefer step-by-step control:
    - CMake support
    - Your preferred compiler (MSVC 2019/2022 or MinGW recommended)
 
-#### Step 2: Setup Environment
-
-Run the setup script to configure your environment:
-```batch
-setup.bat
-```
-
-#### Step 3: Configure Build
-
-```batch
-configure.bat
-```
-
-#### Step 4: Build Project
+#### Step 2: Build Project
 
 ```batch
 build.bat
