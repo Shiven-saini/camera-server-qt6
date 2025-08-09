@@ -228,9 +228,29 @@ bool WireGuardManager::connectTunnel(const QString& configName)
     emit logMessage(QString("Connecting to WireGuard tunnel: %1").arg(configKey));
     
     QString serviceName = generateServiceName(configKey);
-    
-    try {
-        if (createTunnelService(pathToUse, serviceName)) {
+      try {
+        // Attempt service creation with retry logic for race condition handling
+        bool serviceCreated = false;
+        int createAttempts = 0;
+        const int maxCreateAttempts = 2;
+        
+        while (createAttempts < maxCreateAttempts && !serviceCreated) {
+            createAttempts++;
+            emit logMessage(QString("Attempting to create tunnel service (attempt %1/%2)").arg(createAttempts).arg(maxCreateAttempts));
+            
+            if (createTunnelService(pathToUse, serviceName)) {
+                serviceCreated = true;
+                emit logMessage(QString("Successfully created tunnel service on attempt %1").arg(createAttempts));
+            } else {
+                emit logMessage(QString("Failed to create tunnel service on attempt %1").arg(createAttempts));
+                if (createAttempts < maxCreateAttempts) {
+                    emit logMessage("Waiting 1 second before retry...");
+                    QThread::msleep(1000); // Wait 1 second before retry
+                }
+            }
+        }
+        
+        if (serviceCreated) {
             if (startTunnelService(serviceName)) {
                 m_currentConfigName = configKey;
                 m_currentServiceName = serviceName;
@@ -245,7 +265,7 @@ bool WireGuardManager::connectTunnel(const QString& configName)
                 emit logMessage(QString("Failed to start tunnel service for: %1").arg(configKey));
             }
         } else {
-            emit logMessage(QString("Failed to create tunnel service for: %1").arg(configKey));
+            emit logMessage(QString("Failed to create tunnel service after %1 attempts for: %2").arg(maxCreateAttempts).arg(configKey));
         }
     } catch (...) {
         emit errorOccurred(QString("Exception occurred while connecting to tunnel: %1").arg(configKey));
@@ -477,18 +497,54 @@ bool WireGuardManager::createTunnelService(const QString& configPath, const QStr
     // According to WireGuard documentation, we need to create a Windows service 
     // that will call WireGuardTunnelService, not call it directly
     
-    // First, verify the configuration file exists and is readable
+    // First, verify the configuration file exists and is readable with robust validation
     QFile configFile(configPath);
     if (!configFile.exists()) {
         emit errorOccurred(QString("Configuration file does not exist: %1").arg(configPath));
         return false;
     }
     
-    if (!configFile.open(QIODevice::ReadOnly)) {
-        emit errorOccurred(QString("Cannot read configuration file: %1").arg(configPath));
+    // Try to open and read the file multiple times to ensure it's fully written
+    QString configContent;
+    int attempts = 0;
+    const int maxAttempts = 5;
+    bool fileValidated = false;
+    
+    while (attempts < maxAttempts && !fileValidated) {
+        if (configFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QTextStream stream(&configFile);
+            configContent = stream.readAll();
+            configFile.close();
+            
+            // Validate content is not empty and looks like a WireGuard config
+            if (!configContent.isEmpty() && 
+                configContent.contains("[Interface]") && 
+                configContent.contains("PrivateKey")) {
+                fileValidated = true;
+                emit logMessage(QString("Config file validated successfully on attempt %1: %2 characters")
+                               .arg(attempts + 1).arg(configContent.length()));
+            } else {
+                emit logMessage(QString("Config file validation failed on attempt %1: empty or invalid content")
+                               .arg(attempts + 1));
+            }
+        } else {
+            emit logMessage(QString("Could not open config file on attempt %1: %2")
+                           .arg(attempts + 1).arg(configFile.errorString()));
+        }
+        
+        if (!fileValidated) {
+            attempts++;
+            if (attempts < maxAttempts) {
+                emit logMessage(QString("Waiting 200ms before retry attempt %1").arg(attempts + 1));
+                QThread::msleep(200); // Wait 200ms before retry
+            }
+        }
+    }
+    
+    if (!fileValidated) {
+        emit errorOccurred(QString("Cannot validate configuration file after %1 attempts: %2").arg(maxAttempts).arg(configPath));
         return false;
     }
-    configFile.close();
     
     // Get current executable path for service creation
     QString exePath = QCoreApplication::applicationFilePath();

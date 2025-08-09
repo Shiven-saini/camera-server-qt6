@@ -33,7 +33,6 @@ signals:
 
 private slots:
     // User-initiated actions
-    void onLoadConfigClicked();
     void onConnectClicked();
     void onDisconnectClicked();
     void onPingTestClicked();
@@ -55,10 +54,8 @@ private slots:
     // Internal timer slot
     void updateConnectionStatus();
 
-private:
-    // UI Setup
+private:    // UI Setup
     void setupUI();
-    void setupConfigGroup();
     void setupConnectionGroup();
     void setupStatusGroup();
     void setupPingTestGroup();
@@ -68,26 +65,20 @@ private:
     void updateUI();
     QString getStatusText(WireGuardManager::ConnectionStatus status);
     QPixmap getStatusIcon(WireGuardManager::ConnectionStatus status);
-    
-    // Config management
+      // Config management
     void fetchWireGuardConfig();
     void saveWireGuardConfig(const QString& configContent);
     QString getSavedWireGuardConfig();
     QString getWireGuardConfigPath();
+    void validateAndConnect();
     
     // Core components
     WireGuardManager* m_wireGuardManager;
     QTimer* m_statusUpdateTimer;
     QProcess* m_pingProcess;
     QNetworkAccessManager* m_networkManager;
-    QNetworkReply* m_configReply;
-
-    // UI Components (pointers managed by Qt's parent-child system)
+    QNetworkReply* m_configReply;    // UI Components (pointers managed by Qt's parent-child system)
     QVBoxLayout* m_mainLayout;
-    
-    QGroupBox* m_configGroup;
-    QPushButton* m_loadConfigButton;
-    QLabel* m_configPathLabel;
     
     QGroupBox* m_connectionGroup;
     QPushButton* m_connectButton;
@@ -100,11 +91,9 @@ private:
     QLabel* m_currentConfigLabel;
     QLabel* m_uptimeLabel;
     QLabel* m_transferLabel;
-    
-    QGroupBox* m_pingTestGroup;
+      QGroupBox* m_pingTestGroup;
     QPushButton* m_pingTestButton;
     QLabel* m_pingStatusLabel;
-    QTextEdit* m_pingOutputText;
     
     // State tracking
     QString m_loadedConfigPath;
