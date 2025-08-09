@@ -93,7 +93,7 @@ void AuthDialog::performAuthentication(const QString &user,const QString &pass)
     showStatus("Authenticating…", Qt::darkGray);
     m_loginBtn->setEnabled(false);
 
-    QNetworkRequest req(QUrl("http://localhost:8086/auth/login"));
+    QNetworkRequest req(QUrl("http://3.82.200.187:8086/auth/login"));
     req.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
 
     QJsonObject obj{{"username",user},{"password",pass}};
