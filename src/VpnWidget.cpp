@@ -16,12 +16,23 @@
 #include <QTextEdit>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QSettings>
+#include <QStandardPaths>
+#include <QDir>
+#include "AuthDialog.h"
 
 VpnWidget::VpnWidget(QWidget *parent)
     : QWidget(parent)
     , m_wireGuardManager(new WireGuardManager(this))
     , m_statusUpdateTimer(new QTimer(this))
     , m_pingProcess(nullptr)
+    , m_networkManager(new QNetworkAccessManager(this))
+    , m_configReply(nullptr)
 {
     setupUI();
     connectSignals();
@@ -29,11 +40,28 @@ VpnWidget::VpnWidget(QWidget *parent)
     m_statusUpdateTimer->setInterval(1000); // 1-second updates
     m_statusUpdateTimer->start();
     
+    // Try to load saved config automatically
+    QString savedConfig = getSavedWireGuardConfig();
+    if (!savedConfig.isEmpty()) {
+        QString configPath = getWireGuardConfigPath();
+        QFileInfo fileInfo(configPath);
+        m_loadedConfigPath = configPath;
+        m_configPathLabel->setText(QString("Auto-loaded: %1").arg(fileInfo.fileName()));
+        m_configPathLabel->setStyleSheet("font-style: normal; color: green;");
+        m_currentConfigLabel->setText(tr("Configuration: %1 (Auto)").arg(fileInfo.fileName()));
+        emit logMessage(QString("Auto-loaded WireGuard config: %1").arg(configPath));
+    }
+    
     updateUI();
 }
 
 VpnWidget::~VpnWidget()
 {
+    if (m_configReply) {
+        m_configReply->abort();
+        m_configReply->deleteLater();
+    }
+    
     if (m_pingProcess && m_pingProcess->state() != QProcess::NotRunning) {
         m_pingProcess->kill();
         m_pingProcess->waitForFinished(2000);
@@ -58,7 +86,7 @@ void VpnWidget::setupConfigGroup()
 {
     m_configGroup = new QGroupBox(tr("VPN Configuration"));
     
-    m_loadConfigButton = new QPushButton(tr("Load Config File..."));
+    m_loadConfigButton = new QPushButton(tr("Fetch Config from Server"));
     m_configPathLabel = new QLabel(tr("No configuration loaded."));
     m_configPathLabel->setStyleSheet("font-style: italic; color: #888;");
     
@@ -163,25 +191,22 @@ void VpnWidget::connectSignals()
         connect(m_pingProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &VpnWidget::onPingFinished);
         connect(m_pingProcess, &QProcess::errorOccurred, this, &VpnWidget::onPingError);
     }
+    
+    // Timer signal
+    connect(m_statusUpdateTimer, &QTimer::timeout, this, &VpnWidget::updateConnectionStatus);
 }
 
 void VpnWidget::onLoadConfigClicked()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, 
-        tr("Select WireGuard Configuration"), "", tr("Config Files (*.conf);;All Files (*)"));
-    
-    if (filePath.isEmpty()) {
+    // Check if we have a valid auth token
+    QString token = AuthDialog::getCurrentAuthToken();
+    if (token.isEmpty()) {
+        QMessageBox::warning(this, tr("Authentication Required"), 
+                           tr("Please authenticate first to fetch the WireGuard configuration."));
         return;
     }
     
-    m_loadedConfigPath = filePath;
-    QFileInfo fileInfo(filePath);
-    m_configPathLabel->setText(fileInfo.fileName());
-    m_configPathLabel->setStyleSheet("font-style: normal; color: black;");
-    m_currentConfigLabel->setText(tr("Configuration: %1").arg(fileInfo.fileName()));
-    
-    emit logMessage(QString("Loaded WireGuard config: %1").arg(filePath));
-    updateUI();
+    fetchWireGuardConfig();
 }
 
 void VpnWidget::onConnectClicked()
@@ -351,4 +376,140 @@ QPixmap VpnWidget::getStatusIcon(WireGuardManager::ConnectionStatus status)
     painter.drawEllipse(0, 0, 16, 16);
     
     return pixmap;
+}
+
+void VpnWidget::fetchWireGuardConfig()
+{
+    if (m_configReply) {
+        m_configReply->abort();
+        m_configReply->deleteLater();
+    }
+    
+    QString token = AuthDialog::getCurrentAuthToken();
+    if (token.isEmpty()) {
+        QMessageBox::warning(this, tr("Authentication Required"), 
+                           tr("No valid authentication token found."));
+        return;
+    }
+    
+    m_configPathLabel->setText("Fetching configuration from server...");
+    m_configPathLabel->setStyleSheet("font-style: italic; color: blue;");
+    m_loadConfigButton->setEnabled(false);
+    
+    QNetworkRequest request(QUrl("http://3.82.200.187:8086/wireguard/generate-config"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setRawHeader("Authorization", QString("Bearer %1").arg(token).toUtf8());
+    
+    m_configReply = m_networkManager->post(request, QByteArray());
+    
+    connect(m_configReply, &QNetworkReply::finished, this, &VpnWidget::onConfigFetchFinished);
+    connect(m_configReply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::errorOccurred), 
+            this, &VpnWidget::onConfigFetchError);
+    
+    emit logMessage("Fetching WireGuard configuration from server...");
+}
+
+void VpnWidget::onConfigFetchFinished()
+{
+    if (!m_configReply) return;
+    
+    int statusCode = m_configReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    QByteArray data = m_configReply->readAll();
+    m_configReply->deleteLater();
+    m_configReply = nullptr;
+    
+    m_loadConfigButton->setEnabled(true);
+    
+    if (statusCode == 200) {
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        QJsonObject obj = doc.object();
+        QString configContent = obj.value("config_content").toString();
+        
+        if (!configContent.isEmpty()) {
+            // Replace \n with actual newlines for proper formatting
+            configContent.replace("\\n", "\n");
+            
+            saveWireGuardConfig(configContent);
+            
+            QString configPath = getWireGuardConfigPath();
+            QFileInfo fileInfo(configPath);
+            m_loadedConfigPath = configPath;
+            m_configPathLabel->setText(QString("Server config: %1").arg(fileInfo.fileName()));
+            m_configPathLabel->setStyleSheet("font-style: normal; color: green;");
+            m_currentConfigLabel->setText(tr("Configuration: %1 (Server)").arg(fileInfo.fileName()));
+            
+            emit logMessage(QString("Successfully fetched and saved WireGuard config: %1").arg(configPath));
+            updateUI();
+        } else {
+            m_configPathLabel->setText("Error: No config content in server response");
+            m_configPathLabel->setStyleSheet("font-style: italic; color: red;");
+            QMessageBox::warning(this, tr("Config Error"), tr("Server response did not contain config content."));
+        }
+    } else if (statusCode == 401) {
+        m_configPathLabel->setText("Authentication failed");
+        m_configPathLabel->setStyleSheet("font-style: italic; color: red;");
+        QMessageBox::warning(this, tr("Authentication Failed"), 
+                           tr("Authentication token is invalid or expired. Please login again."));
+        AuthDialog::clearCurrentAuthToken();
+    } else {
+        m_configPathLabel->setText(QString("Server error (%1)").arg(statusCode));
+        m_configPathLabel->setStyleSheet("font-style: italic; color: red;");
+        QMessageBox::warning(this, tr("Server Error"), 
+                           tr("Failed to fetch configuration. Server returned status code: %1").arg(statusCode));
+    }
+}
+
+void VpnWidget::onConfigFetchError(QNetworkReply::NetworkError error)
+{
+    if (!m_configReply) return;
+    
+    QString errorString = m_configReply->errorString();
+    m_configReply->deleteLater();
+    m_configReply = nullptr;
+    
+    m_loadConfigButton->setEnabled(true);
+    m_configPathLabel->setText("Network error occurred");
+    m_configPathLabel->setStyleSheet("font-style: italic; color: red;");
+    
+    QMessageBox::critical(this, tr("Network Error"), 
+                         tr("Failed to fetch configuration from server:\n%1").arg(errorString));
+    
+    emit logMessage(QString("Network error fetching config: %1").arg(errorString));
+}
+
+void VpnWidget::saveWireGuardConfig(const QString& configContent)
+{
+    // Save to QSettings for persistence
+    QSettings settings("ViscoConnect", "WireGuard");
+    settings.setValue("config_content", configContent);
+    
+    // Also save to a physical file for WireGuard to use
+    QString configPath = getWireGuardConfigPath();
+    QDir dir = QFileInfo(configPath).absoluteDir();
+    if (!dir.exists()) {
+        dir.mkpath(".");
+    }
+    
+    QFile file(configPath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream stream(&file);
+        stream << configContent;
+        file.close();
+    }
+}
+
+QString VpnWidget::getSavedWireGuardConfig()
+{
+    QSettings settings("ViscoConnect", "WireGuard");
+    return settings.value("config_content").toString();
+}
+
+QString VpnWidget::getWireGuardConfigPath()
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir dir(appDataPath);
+    if (!dir.exists()) {
+        dir.mkpath(".");
+    }
+    return dir.filePath("wireguard_server.conf");
 }

@@ -1,6 +1,7 @@
 #include "AuthDialog.h"
 #include <QtWidgets>
 #include <QtNetwork>
+#include <QSettings>
 
 AuthDialog::AuthDialog(QWidget *parent) : QDialog(parent)
 {
@@ -110,12 +111,17 @@ void AuthDialog::onNetworkFinished()
     int code = m_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     QByteArray data = m_reply->readAll();
     m_reply->deleteLater();
-    m_reply=nullptr;
-
-    if (code==200) {
+    m_reply=nullptr;    if (code==200) {
         QJsonDocument doc=QJsonDocument::fromJson(data);
         QString token=doc.object().value("access_token").toString();
         if (!token.isEmpty()) {
+            // Save the token to QSettings
+            QSettings s("ViscoConnect","Auth");
+            s.setValue("access_token", token);
+            // Set expiration time (assume 1 hour if not provided by server)
+            qint64 expiresAt = QDateTime::currentSecsSinceEpoch() + 3600; // 1 hour
+            s.setValue("expires_at", expiresAt);
+            
             showStatus("Login successful.", Qt::darkGreen);
             QTimer::singleShot(700, this, &QDialog::accept);
             return;

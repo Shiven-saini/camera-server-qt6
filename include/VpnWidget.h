@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QDateTime>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
 #include "WireGuardManager.h" // Full include for WireGuardManager::ConnectionStatus enum
 
 // Forward-declare Qt classes to reduce header dependencies and improve compile times
@@ -36,6 +38,10 @@ private slots:
     void onDisconnectClicked();
     void onPingTestClicked();
 
+    // Network slots for config fetching
+    void onConfigFetchFinished();
+    void onConfigFetchError(QNetworkReply::NetworkError error);
+
     // Slots for QProcess (Ping)
     void onPingFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void onPingError(QProcess::ProcessError error);
@@ -63,10 +69,18 @@ private:
     QString getStatusText(WireGuardManager::ConnectionStatus status);
     QPixmap getStatusIcon(WireGuardManager::ConnectionStatus status);
     
+    // Config management
+    void fetchWireGuardConfig();
+    void saveWireGuardConfig(const QString& configContent);
+    QString getSavedWireGuardConfig();
+    QString getWireGuardConfigPath();
+    
     // Core components
     WireGuardManager* m_wireGuardManager;
     QTimer* m_statusUpdateTimer;
     QProcess* m_pingProcess;
+    QNetworkAccessManager* m_networkManager;
+    QNetworkReply* m_configReply;
 
     // UI Components (pointers managed by Qt's parent-child system)
     QVBoxLayout* m_mainLayout;
