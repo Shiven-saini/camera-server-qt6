@@ -1,17 +1,17 @@
 #include "SystemTrayManager.h"
 #include "MainWindow.h"
-#include "CameraManager.h"
+#include "VpnWidget.h"
 #include "Logger.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QIcon>
 
-SystemTrayManager::SystemTrayManager(MainWindow* mainWindow, CameraManager* cameraManager, QObject *parent)
+SystemTrayManager::SystemTrayManager(MainWindow* mainWindow, VpnWidget* vpnWidget, QObject *parent)
     : QObject(parent)
     , m_trayIcon(nullptr)
     , m_contextMenu(nullptr)
     , m_mainWindow(mainWindow)
-    , m_cameraManager(cameraManager)
+    , m_vpnWidget(vpnWidget)
 {
 }
 
@@ -33,9 +33,8 @@ void SystemTrayManager::initialize()
     createContextMenu();
     
     connect(m_trayIcon, &QSystemTrayIcon::activated, this, &SystemTrayManager::handleTrayIconActivated);
-    
-    updateTrayIconToolTip();
-    updateCameraStatus();
+      updateTrayIconToolTip();
+    updateVpnStatus();
     
     // Show the tray icon immediately
     m_trayIcon->show();
@@ -90,21 +89,21 @@ void SystemTrayManager::handleShowMainWindow()
     emit showMainWindow();
 }
 
-void SystemTrayManager::handleEnableAllCameras()
+void SystemTrayManager::handleJoinNetwork()
 {
-    if (m_cameraManager) {
-        m_cameraManager->startAllCameras();
-        showNotification("Visco Connect", "Starting all cameras...", QSystemTrayIcon::Information);
-        LOG_INFO("All cameras enabled via system tray", "SystemTrayManager");
+    if (m_vpnWidget) {
+        m_vpnWidget->connectToNetwork();
+        // No notification when joining network
+        LOG_INFO("Join network requested via system tray", "SystemTrayManager");
     }
 }
 
-void SystemTrayManager::handleDisableAllCameras()
+void SystemTrayManager::handleLeaveNetwork()
 {
-    if (m_cameraManager) {
-        m_cameraManager->stopAllCameras();
-        showNotification("Visco Connect", "Stopping all cameras...", QSystemTrayIcon::Information);
-        LOG_INFO("All cameras disabled via system tray", "SystemTrayManager");
+    if (m_vpnWidget) {
+        m_vpnWidget->disconnectFromNetwork();
+        // No notification when leaving network
+        LOG_INFO("Leave network requested via system tray", "SystemTrayManager");
     }
 }
 
@@ -114,22 +113,27 @@ void SystemTrayManager::handleQuitApplication()
     emit quitApplication();
 }
 
-void SystemTrayManager::updateCameraStatus()
+void SystemTrayManager::updateVpnStatus()
 {
-    if (!m_cameraManager) {
+    if (!m_vpnWidget) {
         return;
     }
     
-    QStringList runningCameras = m_cameraManager->getRunningCameras();
-    int totalCameras = m_cameraManager->getAllCameras().size();
+    bool isConnected = m_vpnWidget->isConnected();
     
     // Update action states
-    if (m_enableAllAction) {
-        m_enableAllAction->setEnabled(runningCameras.size() < totalCameras);
+    if (m_joinNetworkAction) {
+        m_joinNetworkAction->setEnabled(!isConnected);
+        m_joinNetworkAction->setText(isConnected ? "Connected to Network" : "Join Network");
     }
     
-    if (m_disableAllAction) {
-        m_disableAllAction->setEnabled(!runningCameras.isEmpty());
+    if (m_leaveNetworkAction) {
+        m_leaveNetworkAction->setEnabled(isConnected);
+    }
+    
+    if (m_networkStatusAction) {
+        QString statusText = isConnected ? "Status: Connected" : "Status: Disconnected";
+        m_networkStatusAction->setText(statusText);
     }
     
     updateTrayIconToolTip();
@@ -167,15 +171,22 @@ void SystemTrayManager::createContextMenu()
     
     m_contextMenu->addSeparator();
     
-    // Start all cameras action
-    m_enableAllAction = new QAction("Start All Cameras", this);
-    connect(m_enableAllAction, &QAction::triggered, this, &SystemTrayManager::handleEnableAllCameras);
-    m_contextMenu->addAction(m_enableAllAction);
+    // Network status (read-only)
+    m_networkStatusAction = new QAction("Status: Checking...", this);
+    m_networkStatusAction->setEnabled(false);
+    m_contextMenu->addAction(m_networkStatusAction);
     
-    // Stop all cameras action
-    m_disableAllAction = new QAction("Stop All Cameras", this);
-    connect(m_disableAllAction, &QAction::triggered, this, &SystemTrayManager::handleDisableAllCameras);
-    m_contextMenu->addAction(m_disableAllAction);
+    m_contextMenu->addSeparator();
+    
+    // Join network action
+    m_joinNetworkAction = new QAction("Join Network", this);
+    connect(m_joinNetworkAction, &QAction::triggered, this, &SystemTrayManager::handleJoinNetwork);
+    m_contextMenu->addAction(m_joinNetworkAction);
+    
+    // Leave network action
+    m_leaveNetworkAction = new QAction("Leave Network", this);
+    connect(m_leaveNetworkAction, &QAction::triggered, this, &SystemTrayManager::handleLeaveNetwork);
+    m_contextMenu->addAction(m_leaveNetworkAction);
     
     m_contextMenu->addSeparator();
     
@@ -189,16 +200,14 @@ void SystemTrayManager::createContextMenu()
 
 void SystemTrayManager::updateTrayIconToolTip()
 {
-    if (!m_trayIcon || !m_cameraManager) {
+    if (!m_trayIcon || !m_vpnWidget) {
         return;
     }
     
-    QStringList runningCameras = m_cameraManager->getRunningCameras();
-    int totalCameras = m_cameraManager->getAllCameras().size();
+    bool isConnected = m_vpnWidget->isConnected();
     
-    QString toolTip = QString("Visco Connect v2.1.5\n%1 of %2 cameras running")
-                      .arg(runningCameras.size())
-                      .arg(totalCameras);
+    QString toolTip = QString("Visco Connect v2.1.5\nNetwork Status: %1")
+                      .arg(isConnected ? "Connected" : "Disconnected");
     
     m_trayIcon->setToolTip(toolTip);
 }
@@ -210,15 +219,8 @@ void SystemTrayManager::showNotification(const QString& title, const QString& me
     }
 }
 
-void SystemTrayManager::notifyCameraStatusChange(const QString& cameraName, bool started)
+void SystemTrayManager::notifyVpnStatusChange(const QString& status, bool connected)
 {
-    QString message = started ? 
-        QString("Camera '%1' started successfully").arg(cameraName) :
-        QString("Camera '%1' stopped").arg(cameraName);
-    
-    QSystemTrayIcon::MessageIcon icon = started ? 
-        QSystemTrayIcon::Information : 
-        QSystemTrayIcon::Warning;
-    
-    showNotification("Visco Connect", message, icon);
+    // No notifications for network status changes
+    // Users can check status via system tray menu
 }

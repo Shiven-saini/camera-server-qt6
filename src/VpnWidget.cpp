@@ -69,6 +69,37 @@ VpnWidget::~VpnWidget()
     }
 }
 
+// Public methods for external access
+WireGuardManager::ConnectionStatus VpnWidget::getConnectionStatus() const
+{
+    return m_wireGuardManager->getConnectionStatus();
+}
+
+QString VpnWidget::getCurrentConfigName() const
+{
+    return m_wireGuardManager->getCurrentConfigName();
+}
+
+bool VpnWidget::isConnected() const
+{
+    return m_wireGuardManager->getConnectionStatus() == WireGuardManager::Connected;
+}
+
+void VpnWidget::connectToNetwork()
+{
+    if (getConnectionStatus() == WireGuardManager::Disconnected) {
+        onConnectClicked();
+    }
+}
+
+void VpnWidget::disconnectFromNetwork()
+{
+    if (getConnectionStatus() == WireGuardManager::Connected || 
+        getConnectionStatus() == WireGuardManager::Connecting) {
+        onDisconnectClicked();
+    }
+}
+
 void VpnWidget::setupUI()
 {
     m_mainLayout = new QVBoxLayout(this);
@@ -154,21 +185,13 @@ void VpnWidget::setupConnectionGroup()
         "    background-color: #4CAF50;"
         "    border-radius: 3px;"
         "}"
-    );
-      QVBoxLayout* mainLayout = new QVBoxLayout(m_connectionGroup);
+    );      QVBoxLayout* mainLayout = new QVBoxLayout(m_connectionGroup);
     mainLayout->setSpacing(10);
-      // Header layout
-    QHBoxLayout* headerLayout = new QHBoxLayout();
-    QLabel* headerSpacer = new QLabel(); // Empty spacer
-    headerLayout->addWidget(headerSpacer);
-    headerLayout->addStretch();
-    
-    // Main button layout
+      // Main button layout
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->addWidget(m_connectButton);
     buttonLayout->addWidget(m_disconnectButton);
     
-    mainLayout->addLayout(headerLayout);
     mainLayout->addLayout(buttonLayout);
     mainLayout->addWidget(statusWidget);
     mainLayout->addWidget(m_connectionProgress);
@@ -337,6 +360,30 @@ void VpnWidget::onConnectionStatusChanged(WireGuardManager::ConnectionStatus sta
         m_uptimeLabel->setText("Session Duration: --");
         m_transferLabel->setText("Data Transfer: RX: -- / TX: --");
     }
+    
+    // Emit status change signal for external components (like SystemTrayManager)
+    QString statusText;
+    QString configName = getCurrentConfigName();
+    
+    switch (status) {
+        case WireGuardManager::Connected:
+            statusText = configName.isEmpty() ? "Connected" : QString("Connected (%1)").arg(configName);
+            break;
+        case WireGuardManager::Connecting:
+            statusText = "Connecting...";
+            break;
+        case WireGuardManager::Disconnected:
+            statusText = "Disconnected";
+            break;
+        case WireGuardManager::Disconnecting:
+            statusText = "Disconnecting...";
+            break;
+        default:
+            statusText = "Unknown";
+            break;
+    }
+    
+    emit statusChanged(statusText);
 }
 
 void VpnWidget::updateConnectionStatus()

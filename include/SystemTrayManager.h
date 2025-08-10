@@ -8,33 +8,32 @@
 #include <QStyle>
 
 class MainWindow;
-class CameraManager;
+class VpnWidget;
 
 class SystemTrayManager : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit SystemTrayManager(MainWindow* mainWindow, CameraManager* cameraManager, QObject *parent = nullptr);
+    explicit SystemTrayManager(MainWindow* mainWindow, VpnWidget* vpnWidget, QObject *parent = nullptr);
     ~SystemTrayManager();
       void initialize();
     void show();
-    void hide();
-      bool isVisible() const;
-    void updateCameraStatus();
+    void hide();      bool isVisible() const;
+    void updateVpnStatus();
     void showNotification(const QString& title, const QString& message, QSystemTrayIcon::MessageIcon icon = QSystemTrayIcon::Information);
-    void notifyCameraStatusChange(const QString& cameraName, bool started);
+    void notifyVpnStatusChange(const QString& status, bool connected);
 
 signals:
     void showMainWindow();
-    void enableAllCameras();
-    void disableAllCameras();
+    void joinNetwork();
+    void leaveNetwork();
     void quitApplication();
 
 private slots:
     void handleTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
-    void handleShowMainWindow();    void handleEnableAllCameras();
-    void handleDisableAllCameras();
+    void handleShowMainWindow();    void handleJoinNetwork();
+    void handleLeaveNetwork();
     void handleQuitApplication();
 
 private:
@@ -44,16 +43,16 @@ private:
     
     QSystemTrayIcon* m_trayIcon;
     QMenu* m_contextMenu;
-    
-    // Actions
+      // Actions
     QAction* m_showAction;
-    QAction* m_enableAllAction;
-    QAction* m_disableAllAction;
+    QAction* m_joinNetworkAction;
+    QAction* m_leaveNetworkAction;
+    QAction* m_networkStatusAction;
     QAction* m_separatorAction;
     QAction* m_quitAction;
     
     MainWindow* m_mainWindow;
-    CameraManager* m_cameraManager;
+    VpnWidget* m_vpnWidget;
 };
 
 #endif // SYSTEMTRAYMANAGER_H

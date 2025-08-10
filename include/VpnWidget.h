@@ -27,6 +27,13 @@ public:
     explicit VpnWidget(QWidget *parent = nullptr);
     ~VpnWidget();
 
+    // Public methods for external access
+    WireGuardManager::ConnectionStatus getConnectionStatus() const;
+    QString getCurrentConfigName() const;
+    bool isConnected() const;
+    void connectToNetwork();
+    void disconnectFromNetwork();
+
 signals:
     void statusChanged(const QString& status);
     void logMessage(const QString& message);

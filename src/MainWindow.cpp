@@ -1002,10 +1002,9 @@ MainWindow::MainWindow(QWidget *parent)
     LOG_INFO("Creating central widget...", "MainWindow");
     createCentralWidget();
     LOG_INFO("Setting up connections...", "MainWindow");
-    setupConnections();
-      // Initialize system tray
+    setupConnections();    // Initialize system tray
     LOG_INFO("Creating system tray manager...", "MainWindow");
-    m_trayManager = new SystemTrayManager(this, m_cameraManager, this);
+    m_trayManager = new SystemTrayManager(this, m_vpnWidget, this);
     LOG_INFO("Initializing system tray...", "MainWindow");
     m_trayManager->initialize();
     
@@ -1016,11 +1015,38 @@ MainWindow::MainWindow(QWidget *parent)
         raise();
         activateWindow();
     });
-    connect(m_trayManager, &SystemTrayManager::quitApplication, [this]() {
+    connect(m_trayManager, &SystemTrayManager::joinNetwork, this, [this]() {
+        if (m_vpnWidget) {
+            m_vpnWidget->connectToNetwork();
+        }
+    });
+    connect(m_trayManager, &SystemTrayManager::leaveNetwork, this, [this]() {
+        if (m_vpnWidget) {
+            m_vpnWidget->disconnectFromNetwork();
+        }
+    });    connect(m_trayManager, &SystemTrayManager::quitApplication, [this]() {
         m_forceQuit = true;
         close();
         qApp->quit();
+    });      // Connect network status changes to system tray updates
+    LOG_INFO("Connecting network status monitoring...", "MainWindow");    connect(m_vpnWidget, &VpnWidget::statusChanged, this, [this](const QString& status) {
+        if (m_trayManager) {
+            m_trayManager->updateVpnStatus();
+            
+            // Use the dedicated network notification method
+            if (status.contains("Connected") && !status.contains("Connecting")) {
+                m_trayManager->notifyVpnStatusChange(status, true);
+            } else if (status == "Disconnected") {
+                m_trayManager->notifyVpnStatusChange(status, false);
+            }
+        }
     });
+    
+    // Initial network status update for system tray
+    LOG_INFO("Performing initial network status update...", "MainWindow");
+    if (m_trayManager) {
+        m_trayManager->updateVpnStatus();
+    }
       // Load settings and initialize
     LOG_INFO("Loading settings...", "MainWindow");
     loadSettings();
@@ -1360,29 +1386,15 @@ void MainWindow::onCameraSelectionChanged()
 void MainWindow::onCameraStarted(const QString& id)
 {
     updateCameraTable();
-    updateButtons();
-    
-    CameraConfig camera = ConfigManager::instance().getCamera(id);
+    updateButtons();    CameraConfig camera = ConfigManager::instance().getCamera(id);
     showMessage(QString("Camera '%1' started").arg(camera.name()));
-    
-    if (m_trayManager) {
-        m_trayManager->updateCameraStatus();
-        m_trayManager->notifyCameraStatusChange(camera.name(), true);
-    }
 }
 
 void MainWindow::onCameraStopped(const QString& id)
 {
     updateCameraTable();
-    updateButtons();
-    
-    CameraConfig camera = ConfigManager::instance().getCamera(id);
+    updateButtons();    CameraConfig camera = ConfigManager::instance().getCamera(id);
     showMessage(QString("Camera '%1' stopped").arg(camera.name()));
-    
-    if (m_trayManager) {
-        m_trayManager->updateCameraStatus();
-        m_trayManager->notifyCameraStatusChange(camera.name(), false);
-    }
 }
 
 void MainWindow::onCameraError(const QString& id, const QString& error)
@@ -1504,13 +1516,13 @@ void MainWindow::onWireGuardStateChanged(bool isActive)
 {
     QString status = isActive ? "active" : "inactive";
     LOG_INFO(QString("WireGuard state changed: %1").arg(status), "MainWindow");
-    showMessage(QString("WireGuard VPN is now %1").arg(status));
+    showMessage(QString("Network connection is now %1").arg(status));
     
-    // Update status bar with VPN state
+    // Update status bar with network state
     if (isActive) {
-        statusBar()->showMessage("WireGuard VPN Active", 5000);
+        statusBar()->showMessage("Network Connected", 5000);
     } else {
-        statusBar()->showMessage("WireGuard VPN Inactive", 5000);
+        statusBar()->showMessage("Network Disconnected", 5000);
     }
 }
 
@@ -1760,9 +1772,7 @@ void MainWindow::createCentralWidget()
     // Left side - Camera and Service controls
     QWidget* leftWidget = new QWidget;
     QVBoxLayout* leftLayout = new QVBoxLayout(leftWidget);    leftLayout->addWidget(m_cameraGroupBox);
-    leftLayout->addWidget(m_serviceGroupBox);
-
-    // Right side - VPN and User Profile controls in vertical layout
+    leftLayout->addWidget(m_serviceGroupBox);    // Right side - Network and User Profile controls in vertical layout
     QWidget* rightWidget = new QWidget;
     QVBoxLayout* rightLayout = new QVBoxLayout(rightWidget);
     rightLayout->setSpacing(12);
