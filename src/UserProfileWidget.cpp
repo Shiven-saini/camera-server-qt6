@@ -14,6 +14,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
+#include <QProcess>
 
 #include "AuthDialog.h"
 #include "MainWindow.h"
@@ -304,18 +305,24 @@ void UserProfileWidget::onLogoutClicked()
         // Clear saved WireGuard config from QSettings
         QSettings settings("ViscoConnect", "WireGuard");
         settings.clear();
-        LOG_INFO("Cleared WireGuard settings", "UserProfileWidget");
+        LOG_INFO("Cleared WireGuard settings", "UserProfileWidget");        LOG_INFO("User logged out successfully, restarting application for re-authentication", "UserProfileWidget");
 
-        LOG_INFO("User logged out successfully, closing application", "UserProfileWidget");
+        // Get the current application executable path and arguments
+        QString program = QApplication::applicationFilePath();
+        QStringList arguments = QApplication::arguments();
+        arguments.removeFirst(); // Remove the executable name from arguments
 
         // Find the main window and set force quit flag before closing
         MainWindow* mainWindow = qobject_cast<MainWindow*>(window());
         if (mainWindow) {
             mainWindow->setForceQuit(true);
             mainWindow->close();
-        } else {
-            // Fallback: Force application exit
-            QApplication::quit();
         }
+
+        // Restart the application to show login dialog
+        QProcess::startDetached(program, arguments);
+        
+        // Exit current instance
+        QApplication::quit();
     }
 }
