@@ -78,9 +78,7 @@ private:    // UI Setup
     QProcess* m_pingProcess;
     QNetworkAccessManager* m_networkManager;
     QNetworkReply* m_configReply;    // UI Components (pointers managed by Qt's parent-child system)
-    QVBoxLayout* m_mainLayout;
-    
-    QGroupBox* m_connectionGroup;
+    QVBoxLayout* m_mainLayout;    QGroupBox* m_connectionGroup;
     QPushButton* m_connectButton;
     QPushButton* m_disconnectButton;
     QLabel* m_connectionStatusLabel;

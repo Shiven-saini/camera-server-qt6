@@ -28,6 +28,7 @@ QT_END_NAMESPACE
 class NetworkInterfaceManager;
 class EchoServer;
 class PingResponder;
+class UserProfileWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -35,10 +36,10 @@ class MainWindow : public QMainWindow
 
 public:    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    
-    void showMessage(const QString& message);
+      void showMessage(const QString& message);
     void appendLog(const QString& message);
     CameraManager* getCameraManager() const { return m_cameraManager; }
+    void setForceQuit(bool forceQuit) { m_forceQuit = forceQuit; }
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -113,9 +114,11 @@ private:
     QGroupBox* m_logGroupBox;
     QTextEdit* m_logTextEdit;
     QPushButton* m_clearLogButton;
-    
-    // VPN Widget
+      // VPN Widget
     VpnWidget* m_vpnWidget;
+    
+    // User Profile Widget
+    UserProfileWidget* m_userProfileWidget;
     
     // Menu and actions
     QMenu* m_fileMenu;

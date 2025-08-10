@@ -4,6 +4,7 @@
 #include "WindowsService.h"
 #include "CameraDiscovery.h"
 #include "VpnWidget.h"
+#include "UserProfileWidget.h"
 #include "NetworkInterfaceManager.h"
 #include "EchoServer.h"
 #include "PingResponder.h"
@@ -1758,15 +1759,28 @@ void MainWindow::createCentralWidget()
     
     // Left side - Camera and Service controls
     QWidget* leftWidget = new QWidget;
-    QVBoxLayout* leftLayout = new QVBoxLayout(leftWidget);
-    leftLayout->addWidget(m_cameraGroupBox);
-    leftLayout->addWidget(m_serviceGroupBox);    // Right side - VPN controls
+    QVBoxLayout* leftLayout = new QVBoxLayout(leftWidget);    leftLayout->addWidget(m_cameraGroupBox);
+    leftLayout->addWidget(m_serviceGroupBox);
+
+    // Right side - VPN and User Profile controls in vertical layout
+    QWidget* rightWidget = new QWidget;
+    QVBoxLayout* rightLayout = new QVBoxLayout(rightWidget);
+    rightLayout->setSpacing(12);
+    
     m_vpnWidget = new VpnWidget;
     m_vpnWidget->setMaximumWidth(380);
     m_vpnWidget->setMinimumWidth(320);
     
+    m_userProfileWidget = new UserProfileWidget;
+    m_userProfileWidget->setMaximumWidth(380);
+    m_userProfileWidget->setMinimumWidth(320);
+    
+    rightLayout->addWidget(m_vpnWidget);
+    rightLayout->addWidget(m_userProfileWidget);
+    rightLayout->addStretch(); // Add stretch to push widgets to top
+
     topMainLayout->addWidget(leftWidget, 2);
-    topMainLayout->addWidget(m_vpnWidget, 1);
+    topMainLayout->addWidget(rightWidget, 1);
     
     m_mainSplitter->addWidget(topWidget);    m_mainSplitter->addWidget(m_logGroupBox);
     m_mainSplitter->setSizes({650, 250}); // Give even more space to main content and slightly more to logs

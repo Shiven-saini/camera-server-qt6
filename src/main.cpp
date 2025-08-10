@@ -132,16 +132,23 @@ int main(int argc, char *argv[])
         // that doesn't require GUI components. For now, we'll just run the console app.
         
         LOG_INFO("Service mode started successfully", "Main");
-        return app.exec();
-    } else {
+        return app.exec();    } else {
         // Running as regular application
         LOG_INFO("Starting GUI application", "Main");
         
-        // Show authentication dialog before main window
-        AuthDialog authDialog;
-        if (authDialog.exec() != QDialog::Accepted) {
-            LOG_INFO("User canceled login, exiting application", "Main");
-            return 0;
+        // Check if user is already authenticated
+        QString currentToken = AuthDialog::getCurrentAuthToken();
+        if (currentToken.isEmpty()) {
+            // No valid token found, show authentication dialog
+            LOG_INFO("No valid authentication token found, showing login dialog", "Main");
+            AuthDialog authDialog;
+            if (authDialog.exec() != QDialog::Accepted) {
+                LOG_INFO("User canceled login, exiting application", "Main");
+                return 0;
+            }
+            LOG_INFO("User authenticated successfully", "Main");
+        } else {
+            LOG_INFO("Valid authentication token found, skipping login dialog", "Main");
         }
 
         // Check if system tray is available

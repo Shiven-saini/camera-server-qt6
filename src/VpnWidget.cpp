@@ -28,6 +28,8 @@
 #include <QDir>
 #include <QRegularExpression>
 #include "AuthDialog.h"
+#include "MainWindow.h"
+#include "Logger.h"
 
 VpnWidget::VpnWidget(QWidget *parent)
     : QWidget(parent)
@@ -103,8 +105,7 @@ void VpnWidget::setupConnectionGroup()
         "    color: #666666;"
         "}"
     );
-    
-    m_disconnectButton = new QPushButton(tr("Leave Network"));
+      m_disconnectButton = new QPushButton(tr("Leave Network"));
     m_disconnectButton->setMinimumHeight(32);
     m_disconnectButton->setStyleSheet(
         "QPushButton {"
@@ -121,8 +122,7 @@ void VpnWidget::setupConnectionGroup()
         "QPushButton:disabled {"
         "    background-color: #cccccc;"
         "    color: #666666;"
-        "}"
-    );
+        "}"    );
     
     // Status indicator with icon and text
     QWidget* statusWidget = new QWidget();
@@ -155,15 +155,20 @@ void VpnWidget::setupConnectionGroup()
         "    border-radius: 3px;"
         "}"
     );
-    
-    QVBoxLayout* mainLayout = new QVBoxLayout(m_connectionGroup);
+      QVBoxLayout* mainLayout = new QVBoxLayout(m_connectionGroup);
     mainLayout->setSpacing(10);
+      // Header layout
+    QHBoxLayout* headerLayout = new QHBoxLayout();
+    QLabel* headerSpacer = new QLabel(); // Empty spacer
+    headerLayout->addWidget(headerSpacer);
+    headerLayout->addStretch();
     
-    // Button layout
+    // Main button layout
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->addWidget(m_connectButton);
     buttonLayout->addWidget(m_disconnectButton);
     
+    mainLayout->addLayout(headerLayout);
     mainLayout->addLayout(buttonLayout);
     mainLayout->addWidget(statusWidget);
     mainLayout->addWidget(m_connectionProgress);
@@ -260,8 +265,7 @@ void VpnWidget::setupPingTestGroup()
 }
 
 void VpnWidget::connectSignals()
-{
-    // User actions
+{    // User actions
     connect(m_connectButton, &QPushButton::clicked, this, &VpnWidget::onConnectClicked);
     connect(m_disconnectButton, &QPushButton::clicked, this, &VpnWidget::onDisconnectClicked);
     connect(m_pingTestButton, &QPushButton::clicked, this, &VpnWidget::onPingTestClicked);
@@ -284,14 +288,13 @@ void VpnWidget::connectSignals()
 }
 
 void VpnWidget::onConnectClicked()
-{
-    // Check if we already have a valid config
+{    // Check if we already have a valid config
     if (m_loadedConfigPath.isEmpty() || !QFile::exists(m_loadedConfigPath)) {
         // No config available, need to fetch from server first
         QString token = AuthDialog::getCurrentAuthToken();
         if (token.isEmpty()) {
             QMessageBox::warning(this, tr("Authentication Required"), 
-                               tr("Please authenticate first to access the secure network."));
+                               tr("You are not authenticated or your session has expired. Please restart the application to log in again."));
             return;
         }
         
@@ -490,11 +493,10 @@ void VpnWidget::fetchWireGuardConfig()
         m_configReply->abort();
         m_configReply->deleteLater();
     }
-    
-    QString token = AuthDialog::getCurrentAuthToken();
+      QString token = AuthDialog::getCurrentAuthToken();
     if (token.isEmpty()) {
         QMessageBox::warning(this, tr("Authentication Required"), 
-                           tr("No valid authentication token found."));
+                           tr("You are not authenticated or your session has expired. Please restart the application to log in again."));
         m_connectButton->setEnabled(true);
         return;
     }

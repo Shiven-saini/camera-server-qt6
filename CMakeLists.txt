@@ -73,10 +73,10 @@ set(SOURCES
     src/Logger.cpp
     src/ConfigManager.cpp
     src/CameraDiscovery.cpp
-    src/WireGuardManager.cpp
-    src/WireGuardConfigDialog.cpp
+    src/WireGuardManager.cpp    src/WireGuardConfigDialog.cpp
     src/AuthDialog.cpp
     src/VpnWidget.cpp
+    src/UserProfileWidget.cpp
     src/NetworkInterfaceManager.cpp
     src/EchoServer.cpp
     src/PingResponder.cpp
@@ -94,10 +94,10 @@ set(HEADERS
     include/Logger.h
     include/ConfigManager.h
     include/CameraDiscovery.h
-    include/WireGuardManager.h
-    include/WireGuardConfigDialog.h
+    include/WireGuardManager.h    include/WireGuardConfigDialog.h
     include/AuthDialog.h
     include/VpnWidget.h
+    include/UserProfileWidget.h
     include/NetworkInterfaceManager.h
     include/EchoServer.h
     include/PingResponder.h
