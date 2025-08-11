@@ -32,6 +32,11 @@ private:
     void updateProfileDisplay(const QString &fullName, const QString &email);
     void showLoadingState();
     void connectSignals();
+    
+    // Helper methods for avatar generation
+    QString generateInitials(const QString &fullName);
+    QString generateAvatarColor(const QString &fullName);
+    QString darkenColor(const QString &color);
 
     // UI Components
     QGroupBox *m_profileGroup;

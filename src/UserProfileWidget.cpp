@@ -48,109 +48,165 @@ UserProfileWidget::~UserProfileWidget()
 void UserProfileWidget::setupUI()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(8);
-    mainLayout->setContentsMargins(8, 8, 8, 8);
-
-    // Create profile group with consistent styling
-    m_profileGroup = new QGroupBox(tr("User Account"));
-    m_profileGroup->setStyleSheet(
+    mainLayout->setSpacing(0);
+    mainLayout->setContentsMargins(0, 0, 0, 0);    // Create modern profile card with gradient background
+    m_profileGroup = new QGroupBox();    m_profileGroup->setStyleSheet(
         "QGroupBox {"
-        "    font-weight: bold;"
-        "    border: 2px solid #cccccc;"
+        "    border: none;"
+        "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
+        "        stop:0 #f8f9fa, stop:1 #e9ecef);"
         "    border-radius: 6px;"
-        "    margin-top: 1ex;"
-        "    padding-top: 8px;"
-        "    background-color: transparent;"
-        "}"
-        "QGroupBox::title {"
-        "    subcontrol-origin: margin;"
-        "    left: 10px;"
-        "    padding: 0 5px 0 5px;"
+        "    margin: 2px;"
+        "    padding: 0px;"
         "}"
     );
 
-    // Create a clean embedded layout without separate background
+    // Main card container
     QWidget *profileCard = new QWidget();
     profileCard->setStyleSheet(
         "QWidget {"
         "    background-color: transparent;"
         "    border: none;"
-        "    padding: 8px;"
         "}"
-    );
-
-    QHBoxLayout *cardLayout = new QHBoxLayout(profileCard);
-    cardLayout->setSpacing(12);    // Avatar with more subtle styling
+    );    QVBoxLayout *cardLayout = new QVBoxLayout(profileCard);
+    cardLayout->setSpacing(6);
+    cardLayout->setContentsMargins(8, 8, 8, 8);    // Header section with avatar and main info
+    QHBoxLayout *headerLayout = new QHBoxLayout();
+    headerLayout->setSpacing(8);// Modern circular avatar (compact)
     m_avatarLabel = new QLabel();
-    m_avatarLabel->setFixedSize(40, 40);
+    m_avatarLabel->setFixedSize(32, 32);
     m_avatarLabel->setStyleSheet(
         "QLabel {"
-        "    background-color: #6c757d;"
-        "    border-radius: 20px;"
+        "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+        "        stop:0 #4CAF50, stop:1 #45a049);"
+        "    border-radius: 16px;"
         "    color: white;"
         "    font-weight: bold;"
-        "    font-size: 16px;"
-        "    border: 2px solid #e9ecef;"
+        "    font-size: 14px;"
+        "    border: 2px solid white;"
+        "    box-shadow: 0 1px 4px rgba(0,0,0,0.1);"
         "}"
     );
     m_avatarLabel->setAlignment(Qt::AlignCenter);
-    m_avatarLabel->setText("?");    // User info section with compact spacing
+    m_avatarLabel->setText("U");    // User info container
     QVBoxLayout *infoLayout = new QVBoxLayout();
     infoLayout->setSpacing(2);
-    infoLayout->setContentsMargins(0, 0, 0, 0);m_fullNameLabel = new QLabel(tr("Loading..."));
+    infoLayout->setContentsMargins(0, 0, 0, 0);
+
+    // Name section with label
+    QVBoxLayout *nameSection = new QVBoxLayout();
+    nameSection->setSpacing(1);
+      QLabel *nameLabel = new QLabel(tr("NAME"));
+    nameLabel->setStyleSheet(
+        "QLabel {"
+        "    font-size: 8px;"
+        "    font-weight: 600;"
+        "    color: #6c757d;"
+        "    text-transform: uppercase;"
+        "    letter-spacing: 0.3px;"
+        "}"
+    );
+
+    m_fullNameLabel = new QLabel(tr("Loading..."));
     m_fullNameLabel->setStyleSheet(
         "QLabel {"
-        "    font-weight: bold;"
-        "    font-size: 13px;"
-        "    color: #333333;"
-        "    margin-bottom: 2px;"
+        "    font-weight: 600;"
+        "    font-size: 12px;"
+        "    color: #212529;"
+        "    margin: 0px;"
+        "}"
+    );
+
+    nameSection->addWidget(nameLabel);
+    nameSection->addWidget(m_fullNameLabel);
+
+    // Email section with label
+    QVBoxLayout *emailSection = new QVBoxLayout();
+    emailSection->setSpacing(1);
+      QLabel *emailLabel = new QLabel(tr("EMAIL"));
+    emailLabel->setStyleSheet(
+        "QLabel {"
+        "    font-size: 8px;"
+        "    font-weight: 600;"
+        "    color: #6c757d;"
+        "    text-transform: uppercase;"
+        "    letter-spacing: 0.3px;"
         "}"
     );
 
     m_emailLabel = new QLabel(tr("Loading..."));
     m_emailLabel->setStyleSheet(
         "QLabel {"
-        "    font-size: 11px;"
-        "    color: #666666;"
+        "    font-size: 10px;"
+        "    color: #495057;"
+        "    margin: 0px;"
         "}"
     );
 
-    infoLayout->addWidget(m_fullNameLabel);
-    infoLayout->addWidget(m_emailLabel);
-    infoLayout->addStretch();    // Logout button with proper sizing
+    emailSection->addWidget(emailLabel);
+    emailSection->addWidget(m_emailLabel);
+
+    infoLayout->addLayout(nameSection);
+    infoLayout->addLayout(emailSection);
+    infoLayout->addStretch();
+
+    headerLayout->addWidget(m_avatarLabel);
+    headerLayout->addLayout(infoLayout, 1);    // Action section with modern logout button
+    QHBoxLayout *actionLayout = new QHBoxLayout();
+    actionLayout->setContentsMargins(0, 4, 0, 0);
+
+    // Add some spacing on the left
+    actionLayout->addStretch();
+
     m_logoutButton = new QPushButton(tr("Logout"));
-    m_logoutButton->setMinimumSize(90, 34);
-    m_logoutButton->setMaximumHeight(34);
+    m_logoutButton->setMinimumSize(80, 28);
+    m_logoutButton->setMaximumHeight(28);
     m_logoutButton->setStyleSheet(
         "QPushButton {"
-        "    background-color: #dc3545;"
+        "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
+        "        stop:0 #e74c3c, stop:1 #c0392b);"
         "    color: white;"
-        "    font-weight: bold;"
-        "    border: none;"
-        "    border-radius: 4px;"
+        "    font-weight: 600;"
         "    font-size: 11px;"
-        "    padding: 6px 12px;"
+        "    border: none;"
+        "    border-radius: 6px;"
+        "    padding: 6px 16px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #c82333;"
+        "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
+        "        stop:0 #ec7063, stop:1 #e74c3c);"
+        "    transform: translateY(-1px);"
         "}"
         "QPushButton:pressed {"
-        "    background-color: #bd2130;"
-        "}"    );
+        "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
+        "        stop:0 #c0392b, stop:1 #a93226);"
+        "    transform: translateY(0px);"
+        "}"
+    );
 
-    // Button layout section
-    QVBoxLayout *buttonLayout = new QVBoxLayout();
-    buttonLayout->addWidget(m_logoutButton);
-    buttonLayout->addStretch();
+    actionLayout->addWidget(m_logoutButton);
 
-    // Assemble the card layout with better spacing
-    cardLayout->addWidget(m_avatarLabel);
-    cardLayout->addLayout(infoLayout, 1);
-    cardLayout->addLayout(buttonLayout);
+    // Assemble the card
+    cardLayout->addLayout(headerLayout);
+    
+    // Add a subtle separator line
+    QFrame *separator = new QFrame();
+    separator->setFrameShape(QFrame::HLine);
+    separator->setStyleSheet(
+        "QFrame {"
+        "    background-color: #dee2e6;"
+        "    border: none;"
+        "    height: 1px;"
+        "    margin: 0px 0px;"
+        "}"
+    );
+    cardLayout->addWidget(separator);
+    
+    cardLayout->addLayout(actionLayout);
 
-    // Add card to group with minimal padding
+    // Add card to group
     QVBoxLayout *groupLayout = new QVBoxLayout(m_profileGroup);
-    groupLayout->setContentsMargins(8, 16, 8, 8);
+    groupLayout->setContentsMargins(0, 0, 0, 0);
     groupLayout->addWidget(profileCard);
 
     mainLayout->addWidget(m_profileGroup);
@@ -254,6 +310,79 @@ void UserProfileWidget::updateProfileDisplay(const QString &fullName, const QStr
 
     m_fullNameLabel->setText(fullName);
     m_emailLabel->setText(email);
+    
+    // Generate initials for avatar
+    QString initials = generateInitials(fullName);
+    m_avatarLabel->setText(initials);
+    
+    // Update avatar color based on name (for variety)
+    QString avatarColor = generateAvatarColor(fullName);
+    m_avatarLabel->setStyleSheet(
+        QString("QLabel {"
+        "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+        "        stop:0 %1, stop:1 %2);"
+        "    border-radius: 30px;"
+        "    color: white;"
+        "    font-weight: bold;"
+        "    font-size: 24px;"
+        "    border: 3px solid white;"
+        "    box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+        "}").arg(avatarColor).arg(darkenColor(avatarColor))
+    );
+}
+
+QString UserProfileWidget::generateInitials(const QString &fullName)
+{
+    if (fullName.isEmpty() || fullName == tr("Loading...") || fullName == tr("Not authenticated")) {
+        return "U";
+    }
+    
+    QStringList nameParts = fullName.split(' ', Qt::SkipEmptyParts);    QString initials;
+    
+    if (nameParts.size() >= 2) {
+        // First and last name initials
+        initials = QString(nameParts.first().at(0).toUpper()) + QString(nameParts.last().at(0).toUpper());
+    } else if (nameParts.size() == 1) {
+        // Just first letter if single name
+        initials = nameParts.first().left(2).toUpper();
+    } else {
+        initials = "U";
+    }
+    
+    return initials;
+}
+
+QString UserProfileWidget::generateAvatarColor(const QString &fullName)
+{
+    // Generate a consistent color based on the name
+    if (fullName.isEmpty() || fullName == tr("Loading...") || fullName == tr("Not authenticated")) {
+        return "#4CAF50"; // Default green
+    }
+    
+    // Simple hash-based color generation
+    uint hash = qHash(fullName);
+    
+    QStringList colors = {
+        "#4CAF50", // Green
+        "#2196F3", // Blue  
+        "#FF9800", // Orange
+        "#9C27B0", // Purple
+        "#F44336", // Red
+        "#009688", // Teal
+        "#3F51B5", // Indigo
+        "#E91E63", // Pink
+        "#795548", // Brown
+        "#607D8B"  // Blue Grey
+    };
+    
+    return colors[hash % colors.size()];
+}
+
+QString UserProfileWidget::darkenColor(const QString &color)
+{
+    // Simple way to darken a hex color for gradient effect
+    QColor baseColor(color);
+    return baseColor.darker(120).name();
 }
 
 void UserProfileWidget::showLoadingState()
@@ -264,7 +393,8 @@ void UserProfileWidget::showLoadingState()
 }
 
 void UserProfileWidget::onLogoutClicked()
-{    // Show confirmation dialog
+{
+    // Show confirmation dialog
     QMessageBox::StandardButton reply = QMessageBox::question(this,
         tr("Visco Connect - Logout Confirmation"),
         tr("Are you sure you want to logout? The application will close and you will need to authenticate again when you restart it."),
@@ -299,12 +429,12 @@ void UserProfileWidget::onLogoutClicked()
             } else {
                 LOG_WARNING("Failed to delete WireGuard config file: " + configPath, "UserProfileWidget");
             }
-        }
-
-        // Clear saved WireGuard config from QSettings
+        }        // Clear saved WireGuard config from QSettings
         QSettings settings("ViscoConnect", "WireGuard");
         settings.clear();
-        LOG_INFO("Cleared WireGuard settings", "UserProfileWidget");        LOG_INFO("User logged out successfully, restarting application for re-authentication", "UserProfileWidget");
+        LOG_INFO("Cleared WireGuard settings", "UserProfileWidget");
+        
+        LOG_INFO("User logged out successfully, restarting application for re-authentication", "UserProfileWidget");
 
         // Get the current application executable path and arguments
         QString program = QApplication::applicationFilePath();
