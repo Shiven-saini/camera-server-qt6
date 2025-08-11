@@ -5,7 +5,7 @@
 
 AuthDialog::AuthDialog(QWidget *parent) : QDialog(parent)
 {
-    setWindowTitle("Visco Connect");
+    setWindowTitle("Visco Connect - Authentication");
     setFixedSize(380, 300);
     setModal(true);
 

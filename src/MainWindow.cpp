@@ -50,7 +50,7 @@ class CameraConfigDialog : public QDialog
 public:    explicit CameraConfigDialog(const CameraConfig& camera = CameraConfig(), QWidget *parent = nullptr)
         : QDialog(parent), m_camera(camera)
     {
-        setWindowTitle(camera.name().isEmpty() ? "Add Camera" : "Edit Camera");
+        setWindowTitle(camera.name().isEmpty() ? "Visco Connect - Add Camera" : "Visco Connect - Edit Camera");
         setModal(true);
         setMinimumSize(500, 400);
         setMaximumSize(800, 600);
@@ -68,8 +68,7 @@ private slots:
         saveCamera();
         if (m_camera.isValid()) {
             QDialog::accept();
-        } else {
-            QMessageBox::warning(this, "Invalid Configuration", 
+        } else {            QMessageBox::warning(this, "Visco Connect - Configuration Error", 
                                "Please check all fields are correctly filled.");
         }
     }
@@ -239,7 +238,7 @@ private slots:
       void showCredentialPresets()
     {
         QDialog presetDialog(this);
-        presetDialog.setWindowTitle("Common Camera Credentials");
+        presetDialog.setWindowTitle("Visco Connect - Camera Credentials");
         presetDialog.setModal(true);
         presetDialog.setMinimumSize(450, 350);
         presetDialog.resize(500, 400);
@@ -383,7 +382,7 @@ private slots:
       void copyRtspUrl()
     {
         QApplication::clipboard()->setText(m_rtspUrlLabel->text());
-        QMessageBox::information(this, "Copied", "RTSP URL copied to clipboard!");
+        QMessageBox::information(this, "Visco Connect - URL Copied", "RTSP URL copied to clipboard!");
     }
     
     void autoAssignPort()
@@ -410,8 +409,7 @@ private slots:
         
         m_externalPortSpinBox->setValue(nextPort);
         updateRtspPreview();
-        
-        QMessageBox::information(this, "Port Assigned", 
+          QMessageBox::information(this, "Visco Connect - Port Assignment", 
             QString("Auto-assigned external port: %1").arg(nextPort));
     }
 };
@@ -424,7 +422,7 @@ class CameraInfoDialog : public QDialog
 public:    explicit CameraInfoDialog(const CameraConfig& camera, QWidget *parent = nullptr)
         : QDialog(parent), m_camera(camera)
     {
-        setWindowTitle(QString("Camera Information - %1").arg(camera.name()));
+        setWindowTitle(QString("Visco Connect - Camera Information - %1").arg(camera.name()));
         setModal(true);
         setMinimumSize(700, 600);
         setMaximumSize(1000, 800);
@@ -730,7 +728,7 @@ public:
         : QDialog(parent)
         , m_discovery(nullptr)
         , m_isScanning(false)
-    {        setWindowTitle("Discover Cameras");
+    {        setWindowTitle("Visco Connect - Discover Cameras");
         setModal(true);
         setMinimumSize(950, 750);
         setMaximumSize(1300, 1000);
@@ -974,7 +972,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_isClosingToTray(false)
     , m_forceQuit(false)
     , m_pingProcess(nullptr)
-{    setWindowTitle("Visco Connect v2.1.5 - Demo Build (Verbose Logging Enabled)");
+{    setWindowTitle("Visco Connect");
     setMinimumSize(1000, 800);
     setMaximumSize(1920, 1200); // Increased max height for better content fit
     
@@ -1128,8 +1126,7 @@ void MainWindow::appendLog(const QString& message)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {    // If the system tray is available and we're not forcing quit, minimize to tray
-    if (m_trayManager && m_trayManager->isVisible() && !m_forceQuit) {
-        hide();
+    if (m_trayManager && m_trayManager->isVisible() && !m_forceQuit) {        hide();
         if (m_trayManager) {
             m_trayManager->showNotification("Visco Connect", 
                 "Application was minimized to tray. Right-click the tray icon for options.");
@@ -1157,7 +1154,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::changeEvent(QEvent *event)
 {
     if (event->type() == QEvent::WindowStateChange) {
-        if (isMinimized() && m_trayManager && m_trayManager->isVisible()) {            // Hide to tray when minimized
+        if (isMinimized() && m_trayManager && m_trayManager->isVisible()) {
+            // Hide to tray when minimized
             QTimer::singleShot(100, this, [this]() {
                 hide();
                 if (m_trayManager) {
@@ -1181,7 +1179,7 @@ void MainWindow::addCamera()
         if (m_cameraManager->addCamera(camera)) {
             showMessage(QString("Camera '%1' added successfully").arg(camera.name()));
         } else {
-            QMessageBox::warning(this, "Error", "Failed to add camera");
+            QMessageBox::warning(this, "Visco Connect - Error", "Failed to add camera");
         }
     }
 }
@@ -1251,7 +1249,7 @@ void MainWindow::discoverCameras()
             }
             rtspInfo += "\nYou may need to adjust usernames, passwords, and RTSP paths for your specific cameras.";
             
-            QMessageBox::information(this, "Camera Discovery Complete", rtspInfo);
+            QMessageBox::information(this, "Visco Connect - Camera Discovery", rtspInfo);
         }
     }
 }
@@ -1263,12 +1261,11 @@ void MainWindow::editCamera()
     
     QTableWidgetItem* idItem = m_cameraTable->item(row, 0);
     if (!idItem) return;
-    
-    QString cameraId = idItem->data(Qt::UserRole).toString();
+      QString cameraId = idItem->data(Qt::UserRole).toString();
     CameraConfig camera = ConfigManager::instance().getCamera(cameraId);
     
     if (camera.id().isEmpty()) {
-        QMessageBox::warning(this, "Error", "Camera not found");
+        QMessageBox::warning(this, "Visco Connect - Error", "Camera not found");
         return;
     }
     
@@ -1278,7 +1275,7 @@ void MainWindow::editCamera()
         if (m_cameraManager->updateCamera(cameraId, updatedCamera)) {
             showMessage(QString("Camera '%1' updated successfully").arg(updatedCamera.name()));
         } else {
-            QMessageBox::warning(this, "Error", "Failed to update camera");
+            QMessageBox::warning(this, "Visco Connect - Error", "Failed to update camera");
         }
     }
 }
@@ -1293,9 +1290,8 @@ void MainWindow::showCameraInfo()
     
     QString cameraId = idItem->data(Qt::UserRole).toString();
     CameraConfig camera = ConfigManager::instance().getCamera(cameraId);
-    
-    if (camera.id().isEmpty()) {
-        QMessageBox::warning(this, "Error", "Camera not found");
+      if (camera.id().isEmpty()) {
+        QMessageBox::warning(this, "Visco Connect - Error", "Camera not found");
         return;
     }
     
@@ -1315,7 +1311,7 @@ void MainWindow::removeCamera()
     QString cameraName = nameItem->text();
     QString cameraId = idItem->data(Qt::UserRole).toString();
     
-    int ret = QMessageBox::question(this, "Confirm Removal",
+    int ret = QMessageBox::question(this, "Visco Connect - Confirm Removal",
                                    QString("Are you sure you want to remove camera '%1'?").arg(cameraName),
                                    QMessageBox::Yes | QMessageBox::No);
     
@@ -1323,7 +1319,7 @@ void MainWindow::removeCamera()
         if (m_cameraManager->removeCamera(cameraId)) {
             showMessage(QString("Camera '%1' removed successfully").arg(cameraName));
         } else {
-            QMessageBox::warning(this, "Error", "Failed to remove camera");
+            QMessageBox::warning(this, "Visco Connect - Error", "Failed to remove camera");
         }
     }
 }
@@ -1365,8 +1361,7 @@ void MainWindow::toggleAutoStart()
 }
 
 void MainWindow::showAbout()
-{
-    QMessageBox::about(this, "About Visco Connect",
+{    QMessageBox::about(this, "About Visco Connect",
                       "Visco Connect v2.1.5\n\n"
                       "Demo Build - Verbose Logging Enabled\n\n"
                       "An advanced IP camera port forwarding solution.\n\n"
@@ -1645,9 +1640,9 @@ void MainWindow::createMenuBar()
     m_installServiceAction = new QAction("&Install Service", this);
     connect(m_installServiceAction, &QAction::triggered, [this]() {
         if (WindowsService::instance().installService()) {
-            QMessageBox::information(this, "Success", "Service installed successfully");
+            QMessageBox::information(this, "Visco Connect - Service", "Service installed successfully");
         } else {
-            QMessageBox::warning(this, "Error", "Failed to install service");
+            QMessageBox::warning(this, "Visco Connect - Service Error", "Failed to install service");
         }
     });
     m_serviceMenu->addAction(m_installServiceAction);
@@ -1655,9 +1650,9 @@ void MainWindow::createMenuBar()
     m_uninstallServiceAction = new QAction("&Uninstall Service", this);
     connect(m_uninstallServiceAction, &QAction::triggered, [this]() {
         if (WindowsService::instance().uninstallService()) {
-            QMessageBox::information(this, "Success", "Service uninstalled successfully");
+            QMessageBox::information(this, "Visco Connect - Service", "Service uninstalled successfully");
         } else {
-            QMessageBox::warning(this, "Error", "Failed to uninstall service");
+            QMessageBox::warning(this, "Visco Connect - Service Error", "Failed to uninstall service");
         }
     });
     m_serviceMenu->addAction(m_uninstallServiceAction);

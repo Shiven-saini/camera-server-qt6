@@ -264,10 +264,9 @@ void UserProfileWidget::showLoadingState()
 }
 
 void UserProfileWidget::onLogoutClicked()
-{
-    // Show confirmation dialog
+{    // Show confirmation dialog
     QMessageBox::StandardButton reply = QMessageBox::question(this,
-        tr("Logout Confirmation"),
+        tr("Visco Connect - Logout Confirmation"),
         tr("Are you sure you want to logout? The application will close and you will need to authenticate again when you restart it."),
         QMessageBox::Yes | QMessageBox::No,
         QMessageBox::No);

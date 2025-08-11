@@ -37,7 +37,7 @@ WireGuardConfigDialog::WireGuardConfigDialog(WireGuardManager* wgManager, QWidge
     connectSignals();
     
     // Initialize with default values
-    resetToDefaults();    setWindowTitle("WireGuard Configuration");
+    resetToDefaults();    setWindowTitle("Visco Connect - Network Configuration");
     setMinimumSize(700, 650);
     setMaximumSize(1000, 900);
     resize(750, 700);
@@ -51,7 +51,7 @@ WireGuardConfigDialog::WireGuardConfigDialog(WireGuardManager* wgManager, const 
     setupUI();
     connectSignals();
     
-    setConfiguration(config);    setWindowTitle(QString("Edit WireGuard Configuration - %1").arg(config.interfaceConfig.name));
+    setConfiguration(config);    setWindowTitle(QString("Visco Connect - Edit Network Configuration - %1").arg(config.interfaceConfig.name));
     setMinimumSize(700, 650);
     setMaximumSize(1000, 900);
     resize(750, 700);
@@ -141,9 +141,8 @@ void WireGuardConfigDialog::generateKeypair()
     bool hasExistingKeys = !m_privateKeyEdit->text().isEmpty() && !m_publicKeyEdit->text().isEmpty();
     bool isExistingConfig = !m_config.interfaceConfig.name.isEmpty();
     
-    if (hasExistingKeys && isExistingConfig) {
-        QMessageBox::StandardButton reply = QMessageBox::question(this, 
-            "Replace Existing Keys?",
+    if (hasExistingKeys && isExistingConfig) {        QMessageBox::StandardButton reply = QMessageBox::question(this, 
+            "Visco Connect - Replace Existing Keys?",
             QString("This configuration '%1' already has a keypair.\n\n"
                    "Current Public Key: %2...\n\n"
                    "Generating new keys will make this configuration incompatible with servers "
@@ -212,9 +211,9 @@ void WireGuardConfigDialog::generateKeypair()
                            .arg(keypair.privateKey.left(16));
         }
         
-        QMessageBox::information(this, "Keys Generated Successfully", messageText);
+        QMessageBox::information(this, "Visco Connect - Keys Generated", messageText);
     } else {
-        QMessageBox::warning(this, "Key Generation Failed", 
+        QMessageBox::warning(this, "Visco Connect - Key Generation Failed", 
             "Failed to generate WireGuard keypair. Please check that:\n"
             "1. tunnel.dll and wireguard.dll are in the application directory\n"
             "2. The application is running with appropriate permissions\n\n"            "Check the application logs for more details.");
@@ -226,7 +225,7 @@ void WireGuardConfigDialog::copyPublicKeyToClipboard()
     QString publicKey = m_publicKeyEdit->text().trimmed();
     
     if (publicKey.isEmpty()) {
-        QMessageBox::information(this, "No Public Key", 
+        QMessageBox::information(this, "Visco Connect - No Public Key", 
             "No public key available to copy. Please generate a keypair first.");
         return;
     }
@@ -239,7 +238,7 @@ void WireGuardConfigDialog::copyPublicKeyToClipboard()
     QString truncatedKey = publicKey.length() > 16 ? 
         publicKey.left(16) + "..." : publicKey;
     
-    QMessageBox::information(this, "Public Key Copied", 
+    QMessageBox::information(this, "Visco Connect - Public Key Copied", 
         QString("Public key copied to clipboard!\n\n"
                 "Key: %1\n\n"
                 "You can now paste this key into your VPN server configuration "
@@ -258,10 +257,10 @@ void WireGuardConfigDialog::loadFromFile()
         WireGuardConfig config = m_wireGuardManager->parseConfigFile(fileName);
         if (!config.interfaceConfig.name.isEmpty()) {
             setConfiguration(config);
-            QMessageBox::information(this, "Configuration Loaded", 
+            QMessageBox::information(this, "Visco Connect - Configuration Loaded", 
                 QString("Configuration loaded from %1").arg(fileName));
         } else {
-            QMessageBox::warning(this, "Load Error", 
+            QMessageBox::warning(this, "Visco Connect - Load Error", 
                 "Failed to load configuration from the selected file.");
         }
     }
@@ -316,10 +315,9 @@ void WireGuardConfigDialog::saveToFile()
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream out(&file);
             out << configStr;
-            QMessageBox::information(this, "Configuration Saved", 
-                QString("Configuration saved to %1").arg(fileName));
-        } else {
-            QMessageBox::warning(this, "Save Error", 
+            QMessageBox::information(this, "Visco Connect - Configuration Saved", 
+                QString("Configuration saved to %1").arg(fileName));        } else {
+            QMessageBox::warning(this, "Visco Connect - Save Error", 
                 "Failed to save configuration to the selected file.");
         }
     }
@@ -374,8 +372,7 @@ void WireGuardConfigDialog::validateAndAccept()
         // Auto-save the configuration
         if (m_wireGuardManager->saveConfig(m_config)) {
             accept();
-        } else {
-            QMessageBox::warning(this, "Save Error", 
+        } else {            QMessageBox::warning(this, "Visco Connect - Save Error", 
                 "Configuration is valid but failed to save. Please check permissions and try again.");
         }
     }
@@ -395,19 +392,19 @@ bool WireGuardConfigDialog::validateConfiguration()
 {
     // Validate configuration name
     if (m_config.interfaceConfig.name.isEmpty()) {
-        QMessageBox::warning(this, "Invalid Configuration", "Configuration name cannot be empty.");
+        QMessageBox::warning(this, "Visco Connect - Invalid Configuration", "Configuration name cannot be empty.");
         return false;
     }
     
     // Validate private key
     if (m_config.interfaceConfig.privateKey.isEmpty()) {
-        QMessageBox::warning(this, "Invalid Configuration", "Private key is required.");
+        QMessageBox::warning(this, "Visco Connect - Invalid Configuration", "Private key is required.");
         return false;
     }
     
     // Validate addresses
     if (m_config.interfaceConfig.addresses.isEmpty()) {
-        QMessageBox::warning(this, "Invalid Configuration", "At least one IP address is required.");
+        QMessageBox::warning(this, "Visco Connect - Invalid Configuration", "At least one IP address is required.");
         return false;
     }
     
@@ -415,17 +412,17 @@ bool WireGuardConfigDialog::validateConfiguration()
     if (!m_config.interfaceConfig.peers.isEmpty()) {
         const WireGuardPeer& peer = m_config.interfaceConfig.peers.first();
         if (peer.publicKey.isEmpty()) {
-            QMessageBox::warning(this, "Invalid Configuration", "Peer public key is required when peer is configured.");
+            QMessageBox::warning(this, "Visco Connect - Invalid Configuration", "Peer public key is required when peer is configured.");
             return false;
         }
         
         if (peer.endpoint.isEmpty()) {
-            QMessageBox::warning(this, "Invalid Configuration", "Peer endpoint is required when peer is configured.");
+            QMessageBox::warning(this, "Visco Connect - Invalid Configuration", "Peer endpoint is required when peer is configured.");
             return false;
         }
         
         if (peer.allowedIPs.isEmpty()) {
-            QMessageBox::warning(this, "Invalid Configuration", "Peer allowed IPs are required when peer is configured.");
+            QMessageBox::warning(this, "Visco Connect - Invalid Configuration", "Peer allowed IPs are required when peer is configured.");
             return false;
         }
     }

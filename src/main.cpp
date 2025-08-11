@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     app.setApplicationName("ViscoConnect");
     app.setApplicationVersion("2.1.5");
     app.setOrganizationName("Visco Connect Team");
-    app.setApplicationDisplayName("Visco Connect v2.1.5 - Demo Build (Verbose Logging Enabled)");
+    app.setApplicationDisplayName("");
     app.setOrganizationDomain("viscoconnect.local");
     
     // Check if running as service
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     if (!ConfigManager::instance().loadConfig()) {
         LOG_ERROR("Failed to load configuration", "Main");
         if (!runAsService) {
-            QMessageBox::critical(nullptr, "Error", "Failed to load configuration file");
+            QMessageBox::critical(nullptr, "Visco Connect - Error", "Failed to load configuration file");
         }
         return 1;
     }
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 
         // Check if system tray is available
         if (!QSystemTrayIcon::isSystemTrayAvailable()) {
-            QMessageBox::critical(nullptr, "System Tray",
+            QMessageBox::critical(nullptr, "Visco Connect - System Tray",
                                 "System tray is not available on this system.");
             return 1;
         }

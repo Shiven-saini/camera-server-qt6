@@ -205,8 +205,7 @@ void SystemTrayManager::updateTrayIconToolTip()
     }
     
     bool isConnected = m_vpnWidget->isConnected();
-    
-    QString toolTip = QString("Visco Connect v2.1.5\nNetwork Status: %1")
+      QString toolTip = QString("Visco Connect\nNetwork Status: %1")
                       .arg(isConnected ? "Connected" : "Disconnected");
     
     m_trayIcon->setToolTip(toolTip);

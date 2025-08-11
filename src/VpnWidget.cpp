@@ -316,7 +316,7 @@ void VpnWidget::onConnectClicked()
         // No config available, need to fetch from server first
         QString token = AuthDialog::getCurrentAuthToken();
         if (token.isEmpty()) {
-            QMessageBox::warning(this, tr("Authentication Required"), 
+            QMessageBox::warning(this, tr("Visco Connect - Authentication Required"), 
                                tr("You are not authenticated or your session has expired. Please restart the application to log in again."));
             return;
         }
@@ -334,7 +334,7 @@ void VpnWidget::onConnectClicked()
     
     // Pass the full path to use custom config files
     if (!m_wireGuardManager->connectTunnel(m_loadedConfigPath)) {
-        QMessageBox::critical(this, tr("Connection Error"), tr("Failed to connect using the configuration: %1").arg(m_loadedConfigPath));
+        QMessageBox::critical(this, tr("Visco Connect - Connection Error"), tr("Failed to connect using the configuration: %1").arg(m_loadedConfigPath));
         m_connectButton->setText("Join Network");
         m_connectButton->setEnabled(true);
         m_connectionProgress->setVisible(false);
@@ -410,7 +410,7 @@ void VpnWidget::onTransferStatsUpdated(uint64_t rxBytes, uint64_t txBytes)
 
 void VpnWidget::onWireGuardError(const QString& error)
 {
-    QMessageBox::critical(this, "WireGuard Error", error);
+    QMessageBox::critical(this, "Visco Connect - Network Error", error);
     emit logMessage(QString("WireGuard Error: %1").arg(error));
     updateUI();
 }
@@ -423,12 +423,12 @@ void VpnWidget::onWireGuardLogMessage(const QString& message)
 void VpnWidget::onPingTestClicked()
 {
     if (m_wireGuardManager->getConnectionStatus() != WireGuardManager::Connected) {
-        QMessageBox::information(this, "Not Connected", "Please join the network before running a connectivity test.");
+        QMessageBox::information(this, "Visco Connect - Not Connected", "Please join the network before running a connectivity test.");
         return;
     }
     
     if (m_pingProcess->state() != QProcess::NotRunning) {
-        QMessageBox::warning(this, "Test In Progress", "A connectivity test is already running.");
+        QMessageBox::warning(this, "Visco Connect - Test In Progress", "A connectivity test is already running.");
         return;
     }
     
@@ -542,7 +542,7 @@ void VpnWidget::fetchWireGuardConfig()
     }
       QString token = AuthDialog::getCurrentAuthToken();
     if (token.isEmpty()) {
-        QMessageBox::warning(this, tr("Authentication Required"), 
+        QMessageBox::warning(this, tr("Visco Connect - Authentication Required"), 
                            tr("You are not authenticated or your session has expired. Please restart the application to log in again."));
         m_connectButton->setEnabled(true);
         return;
@@ -593,14 +593,14 @@ void VpnWidget::onConfigFetchFinished()
             validateAndConnect();
             
         } else {
-            QMessageBox::warning(this, tr("Config Error"), tr("Server response did not contain config content."));
+            QMessageBox::warning(this, tr("Visco Connect - Configuration Error"), tr("Server response did not contain config content."));
         }
     } else if (statusCode == 401) {
-        QMessageBox::warning(this, tr("Authentication Failed"), 
+        QMessageBox::warning(this, tr("Visco Connect - Authentication Failed"), 
                            tr("Authentication token is invalid or expired. Please login again."));
         AuthDialog::clearCurrentAuthToken();
     } else {
-        QMessageBox::warning(this, tr("Server Error"), 
+        QMessageBox::warning(this, tr("Visco Connect - Server Error"), 
                            tr("Failed to fetch configuration. Server returned status code: %1").arg(statusCode));
     }
 }
@@ -615,7 +615,7 @@ void VpnWidget::onConfigFetchError(QNetworkReply::NetworkError error)
     
     m_connectButton->setEnabled(true);
     
-    QMessageBox::critical(this, tr("Network Error"), 
+    QMessageBox::critical(this, tr("Visco Connect - Network Error"), 
                          tr("Failed to fetch configuration from server:\n%1").arg(errorString));
     
     emit logMessage(QString("Network error fetching config: %1").arg(errorString));
@@ -725,7 +725,7 @@ void VpnWidget::validateAndConnect()
                         QMetaObject::invokeMethod(this, "onConnectClicked", Qt::QueuedConnection);
                     } else {
                         emit logMessage("ERROR: Config file validation failed after all retries");
-                        QMessageBox::critical(this, tr("Configuration Error"), 
+                        QMessageBox::critical(this, tr("Visco Connect - Configuration Error"), 
                             tr("Failed to validate the configuration file. Please try again."));
                         m_connectButton->setEnabled(true);
                     }
