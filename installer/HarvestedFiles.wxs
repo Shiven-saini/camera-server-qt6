@@ -2,196 +2,196 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
         <DirectoryRef Id="INSTALLFOLDER">
-            <Component Id="cmp0916729B7B7F73135D1B6E1DFD149714" Guid="{52FD8015-0EEF-42E4-BD6B-FC9020594041}">
+            <Component Id="cmp0916729B7B7F73135D1B6E1DFD149714" Guid="{B51D8336-91E3-4167-8031-4018BD76287A}">
                 <File Id="filF631DA267B6CE04A6AC9823F50DD9E3F" KeyPath="yes" Source="$(var.BuildDir)\D3Dcompiler_47.dll" />
             </Component>
-            <Component Id="cmp6233B4C6D561CBC1E35EF95AB111EC11" Guid="{5733A4ED-CFF3-4EC7-A46F-06EE9D811A27}">
+            <Component Id="cmp6233B4C6D561CBC1E35EF95AB111EC11" Guid="{0A5101E7-67A8-4758-A334-063CE81C419A}">
                 <File Id="fil1A4D4681A464C28E69AE96646D592797" KeyPath="yes" Source="$(var.BuildDir)\libgcc_s_seh-1.dll" />
             </Component>
-            <Component Id="cmp85F2AE65C08ECF7EBEA0340A7960D685" Guid="{F1595E4E-5C48-41FA-ABA1-732F7797C482}">
+            <Component Id="cmp85F2AE65C08ECF7EBEA0340A7960D685" Guid="{DB37A31C-880A-4D40-823F-A3F82FB8D5EF}">
                 <File Id="filD38C4E08D5F6B0815708C4857F341CE9" KeyPath="yes" Source="$(var.BuildDir)\libstdc++-6.dll" />
             </Component>
-            <Component Id="cmpF304A849565D4E64AD6C117270C5ACF2" Guid="{BC267BB7-8E6A-40BF-84EE-979E65F0F5B7}">
+            <Component Id="cmpF304A849565D4E64AD6C117270C5ACF2" Guid="{203B5E7D-D159-45E3-BBFD-1DFDE7362C35}">
                 <File Id="filBA676BF52B9007C6FFF8FFB23C800620" KeyPath="yes" Source="$(var.BuildDir)\libwinpthread-1.dll" />
             </Component>
-            <Component Id="cmp316B7EADCCFA5F980015637E294FFC4B" Guid="{4A337AB3-C832-4BAD-AC33-B871DAB28EF8}">
+            <Component Id="cmp316B7EADCCFA5F980015637E294FFC4B" Guid="{6677C9F2-0A22-4685-8A65-B36741B86B49}">
                 <File Id="fil07CE2ABE9F28D446757A019F07E1898F" KeyPath="yes" Source="$(var.BuildDir)\opengl32sw.dll" />
             </Component>
-            <Component Id="cmp02DF6A9A3BF862D35391F764FE67153F" Guid="{2979A143-B009-43F2-9AE6-32E4E2D93D5F}">
+            <Component Id="cmp02DF6A9A3BF862D35391F764FE67153F" Guid="{5E90D794-7CA1-4B7C-8A8C-08307E6330ED}">
                 <File Id="fil494DCCE77F31DE27CD7C03A13FD938B0" KeyPath="yes" Source="$(var.BuildDir)\Qt6Core.dll" />
             </Component>
-            <Component Id="cmp701A262B1CE5139B2E57DF21A5AA3B94" Guid="{C4D15583-B943-4A64-AD28-1907FBA4EEA4}">
+            <Component Id="cmp701A262B1CE5139B2E57DF21A5AA3B94" Guid="{0566329B-1C30-469B-A604-5DA628B6436F}">
                 <File Id="filD9F54CB97035337EAF318E4E55DD2F5F" KeyPath="yes" Source="$(var.BuildDir)\Qt6Gui.dll" />
             </Component>
-            <Component Id="cmp1EAE9F3A379CF532AF1EBC883CDCD1D2" Guid="{F5BCFBED-ED94-44B6-8368-8742CD2CD7A8}">
+            <Component Id="cmp1EAE9F3A379CF532AF1EBC883CDCD1D2" Guid="{842F10B2-647B-47C4-B23B-1BA54BDC6439}">
                 <File Id="fil15AC8A9B3B6A6F1FE6BBDDAE2042D5D0" KeyPath="yes" Source="$(var.BuildDir)\Qt6Network.dll" />
             </Component>
-            <Component Id="cmp01A5C5B07DB5374286B4B2FA4A94324F" Guid="{0171AE28-F6DB-40DA-8C0A-19AD6129E27F}">
+            <Component Id="cmp01A5C5B07DB5374286B4B2FA4A94324F" Guid="{07E51F5A-34AB-4346-8C0D-866F44FFDDD5}">
                 <File Id="fil0A65422BB3F031F2941CA311F6FAA06C" KeyPath="yes" Source="$(var.BuildDir)\Qt6Svg.dll" />
             </Component>
-            <Component Id="cmp5B0A9912E5069950C30FC5FF8EAA16D4" Guid="{955E5CF7-0AAF-4E25-9F15-80BE3E093691}">
+            <Component Id="cmp5B0A9912E5069950C30FC5FF8EAA16D4" Guid="{32AB8555-0FD8-41D0-B7B5-962C632B188C}">
                 <File Id="fil9F3707482AFAB8A22C7B5C23D8C7CE69" KeyPath="yes" Source="$(var.BuildDir)\Qt6Widgets.dll" />
             </Component>
-            <Component Id="cmpBDBC9783C8E60A34EB421C28CDA2D74A" Guid="{8E3EECC8-72B7-42FC-BDD8-F44F5B1F3BDE}">
+            <Component Id="cmpBDBC9783C8E60A34EB421C28CDA2D74A" Guid="{DCC3CDEC-6FF8-45DE-9145-EE60C9435A07}">
                 <File Id="fil1E35BF62CAD45A5AC69218BB4484CDB4" KeyPath="yes" Source="$(var.BuildDir)\tunnel.dll" />
             </Component>
-            <Component Id="cmpCA0C532FE613865E71B73E6A968496A9" Guid="{AA5A04C8-D560-4875-B692-6273085C0C8A}">
+            <Component Id="cmpCA0C532FE613865E71B73E6A968496A9" Guid="{FFB215B6-A8B5-40C4-9AEE-A6656882843B}">
                 <File Id="fil75A679C3BE31DEBC908860D9B19B411E" KeyPath="yes" Source="$(var.BuildDir)\Visco Connect.exe" />
             </Component>
-            <Component Id="cmpA3D950FC4DE962C797C17E999E996D2A" Guid="{0AB13600-4377-4B53-A4EE-1CCF1A59DDFB}">
+            <Component Id="cmpA3D950FC4DE962C797C17E999E996D2A" Guid="{3D51090B-96A4-4DB4-B84C-EE0D3C83894C}">
                 <File Id="fil8B11B236EEC30A80FB93D534D6AB702C" KeyPath="yes" Source="$(var.BuildDir)\wireguard.dll" />
             </Component>
             <Directory Id="dirF9719A857FB92E8654AE4734FEFCD027" Name="generic">
-                <Component Id="cmp0D39BAA4A86E33543C4084CAAAD5ADE5" Guid="{A9323884-7F0B-42DE-858A-4186BC60D4F2}">
+                <Component Id="cmp0D39BAA4A86E33543C4084CAAAD5ADE5" Guid="{137499D8-7EF8-4AD6-9A9A-1C016987F59E}">
                     <File Id="filB2EB179AAD3ED3996A82D1C9679D72D1" KeyPath="yes" Source="$(var.BuildDir)\generic\qtuiotouchplugin.dll" />
                 </Component>
             </Directory>
             <Directory Id="dir076FC34961008E40A6F445EA1DECCABD" Name="iconengines">
-                <Component Id="cmp8EF24A0DDAD5D3BB6012DD24681FA6A7" Guid="{7E4511B7-034C-43B3-9A24-E7A87AA3E1BE}">
+                <Component Id="cmp8EF24A0DDAD5D3BB6012DD24681FA6A7" Guid="{8355F198-5CC2-4E34-AA0B-7910D514BA38}">
                     <File Id="fil429C9BF84101609E60A2074F92FD30ED" KeyPath="yes" Source="$(var.BuildDir)\iconengines\qsvgicon.dll" />
                 </Component>
             </Directory>
             <Directory Id="dirCFD5DCDF1CAB22CF8B4B7E1E01E79D36" Name="imageformats">
-                <Component Id="cmp5039B4AD5D8C909EA17EA732417A9C05" Guid="{6C45689C-1B3D-4C11-B3AA-A0AAD54BC8B3}">
+                <Component Id="cmp5039B4AD5D8C909EA17EA732417A9C05" Guid="{6B6BBE11-EB47-4CB0-81A9-BB0E4100242F}">
                     <File Id="fil62B8A9B874DF63AF7B042EA31508DB37" KeyPath="yes" Source="$(var.BuildDir)\imageformats\qgif.dll" />
                 </Component>
-                <Component Id="cmp8120CD42BB0CFD3BE78C883BD5E3C839" Guid="{DA6B8CEC-EBCC-4517-8103-6CAD2C7114B0}">
+                <Component Id="cmp8120CD42BB0CFD3BE78C883BD5E3C839" Guid="{7B5EEBC3-85F7-41FE-B822-D4E0769CB621}">
                     <File Id="filD858B49A1E0A8B6186B4CE01B6E10E79" KeyPath="yes" Source="$(var.BuildDir)\imageformats\qicns.dll" />
                 </Component>
-                <Component Id="cmpA0EF29ADE625F5F0AF74857F24490FAA" Guid="{762C0600-2544-4793-B612-1E9EF8D67534}">
+                <Component Id="cmpA0EF29ADE625F5F0AF74857F24490FAA" Guid="{C8EEEC97-8B57-4F6B-B3C5-23E7A93A4263}">
                     <File Id="fil23BAD857F9821D47B99B0E5A5970605D" KeyPath="yes" Source="$(var.BuildDir)\imageformats\qico.dll" />
                 </Component>
-                <Component Id="cmpB0C5211DA6E53C209721B2356D26D8DF" Guid="{221457C4-8F05-4773-9175-6B6C866148C0}">
+                <Component Id="cmpB0C5211DA6E53C209721B2356D26D8DF" Guid="{D3C83186-C1C0-4690-A642-5EC9DDC0CCDD}">
                     <File Id="fil13CC9E600BAF85CDCC2C53A86DBF115F" KeyPath="yes" Source="$(var.BuildDir)\imageformats\qjpeg.dll" />
                 </Component>
-                <Component Id="cmpF5B60B50089C330D8DB07C2E94148BCA" Guid="{3B993826-5556-4ABA-B09E-072FB67C5AEB}">
+                <Component Id="cmpF5B60B50089C330D8DB07C2E94148BCA" Guid="{E98CF97B-E53E-48AF-839D-DF94C7D624CF}">
                     <File Id="filE22D27FB377D1334F37D5F798DDA6681" KeyPath="yes" Source="$(var.BuildDir)\imageformats\qsvg.dll" />
                 </Component>
-                <Component Id="cmpE43BB52A480403E2AC31584C681FBFE0" Guid="{0476B89D-E63F-4982-A504-C9D203FF1F88}">
+                <Component Id="cmpE43BB52A480403E2AC31584C681FBFE0" Guid="{6924BAC2-B66F-449D-B380-DA9770D3A830}">
                     <File Id="filA52E81BF9CF9DE32300ADCAD5D949330" KeyPath="yes" Source="$(var.BuildDir)\imageformats\qtga.dll" />
                 </Component>
-                <Component Id="cmp9C0A4035AAD8C1D09E9DA78817B5D50B" Guid="{26D116EC-39C7-4150-B40C-6C08AFFF795D}">
+                <Component Id="cmp9C0A4035AAD8C1D09E9DA78817B5D50B" Guid="{C7EA65FE-DA1B-4F97-9790-BED56E335FA8}">
                     <File Id="fil537D210CDB9F874D5039AB27102DE523" KeyPath="yes" Source="$(var.BuildDir)\imageformats\qtiff.dll" />
                 </Component>
-                <Component Id="cmp49186DA0134E3CA6CDD43710AE259064" Guid="{B5E1AFA9-EC97-4499-9B17-300657BF8245}">
+                <Component Id="cmp49186DA0134E3CA6CDD43710AE259064" Guid="{2819D604-2B7F-4F0F-B7B3-3599C0D6C925}">
                     <File Id="fil58F0FFCD96BBD448B1E9C583B27AB586" KeyPath="yes" Source="$(var.BuildDir)\imageformats\qwbmp.dll" />
                 </Component>
-                <Component Id="cmp8EE7D697D5ABC4FA85B71B6AE41DFD63" Guid="{2794BB71-68FC-4F59-A33E-75CBB359A341}">
+                <Component Id="cmp8EE7D697D5ABC4FA85B71B6AE41DFD63" Guid="{42E72DED-D3AE-4C30-BF99-9350CDEA5205}">
                     <File Id="fil8B3FB8B20AD1470B4A768D7FB8C491E2" KeyPath="yes" Source="$(var.BuildDir)\imageformats\qwebp.dll" />
                 </Component>
             </Directory>
             <Directory Id="dir9E81D7279CF4775E7B05C8962A441D50" Name="networkinformation">
-                <Component Id="cmp016B31FB460498AF5FD750F7A702C3E9" Guid="{B6EA2D86-4DCB-457D-8F53-1BE36072A563}">
+                <Component Id="cmp016B31FB460498AF5FD750F7A702C3E9" Guid="{0113CFEA-1EB3-4D6C-94D1-E6FC0B275A68}">
                     <File Id="fil48F2306BFCC91578A2DD577C321FB6F5" KeyPath="yes" Source="$(var.BuildDir)\networkinformation\qnetworklistmanager.dll" />
                 </Component>
             </Directory>
             <Directory Id="dir908DFC228501FBE723FC009E659CB04F" Name="platforms">
-                <Component Id="cmp3E80143A725EE7380FA78AA9E8BD2283" Guid="{B04472B8-3B88-4013-8FB7-56624D03DD64}">
+                <Component Id="cmp3E80143A725EE7380FA78AA9E8BD2283" Guid="{5EF13A24-4115-46FA-B2F7-8B0F11DE1CC4}">
                     <File Id="fil702C83C4DEF82CE8980ED1100FE61CE2" KeyPath="yes" Source="$(var.BuildDir)\platforms\qwindows.dll" />
                 </Component>
             </Directory>
             <Directory Id="dir1F76115FEB00A2654E3EA26BF5D9FC35" Name="styles">
-                <Component Id="cmpC7C4BF59619F1BFA085A38400E45BFA1" Guid="{81E585C7-571F-41F3-8558-89B273917FB1}">
+                <Component Id="cmpC7C4BF59619F1BFA085A38400E45BFA1" Guid="{7DFD1E1A-5233-4E95-9D3F-2A7E75C35BC7}">
                     <File Id="filC229D59C9F6719E9FCC346CE4CEF2553" KeyPath="yes" Source="$(var.BuildDir)\styles\qwindowsvistastyle.dll" />
                 </Component>
             </Directory>
             <Directory Id="dirB25A090A4C21158B03EE9BE3E0F566D0" Name="tls">
-                <Component Id="cmpC2C3629D4DA7529CD9375535B9621295" Guid="{357F972C-F698-42BB-A6FE-658C25D472EA}">
+                <Component Id="cmpC2C3629D4DA7529CD9375535B9621295" Guid="{1C3FF8E9-3D5B-4148-BE6F-0872BE294B15}">
                     <File Id="fil31F0DB25B8E8E230F6F4313D58BA3BCB" KeyPath="yes" Source="$(var.BuildDir)\tls\qcertonlybackend.dll" />
                 </Component>
-                <Component Id="cmpE5A08224CC0DDB32BE97DFE03F65B77C" Guid="{3B2BC791-8EAB-4BB8-8161-8DF593ECC2F1}">
+                <Component Id="cmpE5A08224CC0DDB32BE97DFE03F65B77C" Guid="{BCDFBD4B-ED84-4EAD-B220-045336508A89}">
                     <File Id="filC7739BE7C9E2CCFB00B90C214BE335BB" KeyPath="yes" Source="$(var.BuildDir)\tls\qopensslbackend.dll" />
                 </Component>
-                <Component Id="cmpE5D902BC9519991107F21C595ADB676A" Guid="{4A810F24-7478-4B40-A388-CD7BC0B4A18D}">
+                <Component Id="cmpE5D902BC9519991107F21C595ADB676A" Guid="{B9829E25-A132-4CD0-B3C6-E94BEB7C89AF}">
                     <File Id="filD0AE3A2B041E93C41277DC6D995C701C" KeyPath="yes" Source="$(var.BuildDir)\tls\qschannelbackend.dll" />
                 </Component>
             </Directory>
             <Directory Id="dir83B71B3CD0F995692A90933430D9448A" Name="translations">
-                <Component Id="cmpF3CE7FC6134D66D4CE90D6D037DAF8EF" Guid="{70EEE282-5FE3-4622-9AE6-57F89EBD058A}">
+                <Component Id="cmpF3CE7FC6134D66D4CE90D6D037DAF8EF" Guid="{C840C4A4-F8DF-4731-8E01-BD2BE5C31865}">
                     <File Id="fil1A01DC13DC8D9D92E1B6B1898BA5F579" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_ar.qm" />
                 </Component>
-                <Component Id="cmp6475B1DB61508165D733CD4DF26E2D44" Guid="{BCEAE686-D092-4088-92A0-18207A079B43}">
+                <Component Id="cmp6475B1DB61508165D733CD4DF26E2D44" Guid="{5E57D08C-AE3F-43FC-AFA5-A948A1C2ED30}">
                     <File Id="fil276755611F9B10E0F0B16A0329808E35" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_bg.qm" />
                 </Component>
-                <Component Id="cmp945266DE1B9E908C568AEC60077412E7" Guid="{543CE367-8FCD-49DE-815A-FDD11EA5141D}">
+                <Component Id="cmp945266DE1B9E908C568AEC60077412E7" Guid="{0860651E-753B-4DAA-A4E3-35169E47A41D}">
                     <File Id="filBCB45EE1EDBEC50C479DC2A3EA98C716" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_ca.qm" />
                 </Component>
-                <Component Id="cmpF28CA0693171CDD2AA679C08F57F5149" Guid="{3A7636DA-E406-48B6-ABED-418E7B114604}">
+                <Component Id="cmpF28CA0693171CDD2AA679C08F57F5149" Guid="{CB0EE05D-BB0D-428C-9AB7-72B91E91D7AB}">
                     <File Id="filC088037CA2691E60B50586017445AC89" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_cs.qm" />
                 </Component>
-                <Component Id="cmpF68CB8B9671E624CD3B3B72FADECF7EC" Guid="{3853EF9A-C4BF-4CB5-8C6F-A64A7A64D3AE}">
+                <Component Id="cmpF68CB8B9671E624CD3B3B72FADECF7EC" Guid="{CF143B4F-4F1C-4414-ADE7-B8CD314A510D}">
                     <File Id="fil09E14BDB048841A6515D5069E790FB3B" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_da.qm" />
                 </Component>
-                <Component Id="cmpB606A20E9839323D8BC021D0037D4B02" Guid="{BDF45B0F-B594-4C6C-8F07-35F8DB0E5FAD}">
+                <Component Id="cmpB606A20E9839323D8BC021D0037D4B02" Guid="{EE6C6E23-E5DE-43C3-BE82-3D50DE2AD17F}">
                     <File Id="fil76D3CB54523D5B785F58C0E308ED9360" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_de.qm" />
                 </Component>
-                <Component Id="cmpFE253A4B01A7C4507F64D6EF7D840C90" Guid="{AD0F08F2-4445-44F1-A450-88135E89793C}">
+                <Component Id="cmpFE253A4B01A7C4507F64D6EF7D840C90" Guid="{BC4A37DC-ADC8-427B-B8B9-3992BDA2AB64}">
                     <File Id="fil20B2FB4C6C0E0208AABF252757D71593" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_en.qm" />
                 </Component>
-                <Component Id="cmp7B2ADC27C95CA6DCDAE86C5D20D7B911" Guid="{025D6CB1-EF4C-4552-B1AF-D045E5BBAD72}">
+                <Component Id="cmp7B2ADC27C95CA6DCDAE86C5D20D7B911" Guid="{EE12A14F-438F-4258-AD6F-6F1956C7546E}">
                     <File Id="fil8F3E1C9DECFA7E21A5496618AD08F38F" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_es.qm" />
                 </Component>
-                <Component Id="cmpD21B8839E17335D9C35CFFC4DD1B6709" Guid="{7EB57719-17BF-4BA2-B97C-6AB497989262}">
+                <Component Id="cmpD21B8839E17335D9C35CFFC4DD1B6709" Guid="{E7455C54-1A0B-4245-872F-5B2CCD2EE389}">
                     <File Id="filB2931CB8E0596E9438CBFD2876E86434" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_fa.qm" />
                 </Component>
-                <Component Id="cmpDD5495105FC1A50D579C23A6F9AB2D9C" Guid="{F9EB0420-69AE-4E57-BD13-F8D461B642F1}">
+                <Component Id="cmpDD5495105FC1A50D579C23A6F9AB2D9C" Guid="{414C1894-3132-4B72-ABD1-FFAEA807A57D}">
                     <File Id="fil1910C120169307B447E427AD7D143CDA" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_fi.qm" />
                 </Component>
-                <Component Id="cmpA7F3FE566195360501EBAA88FE7E268C" Guid="{3AEDAC59-F672-4D00-A376-854403671AD2}">
+                <Component Id="cmpA7F3FE566195360501EBAA88FE7E268C" Guid="{1AB8FC35-690E-4C25-955D-ECF3F2D293C1}">
                     <File Id="fil0B149A6EBDF2F8D2D396AE6A1E9EB113" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_fr.qm" />
                 </Component>
-                <Component Id="cmpDD5DD62078DA10D06B2C61ABF78887AE" Guid="{D78899B6-505B-41DC-838C-C858138E8790}">
+                <Component Id="cmpDD5DD62078DA10D06B2C61ABF78887AE" Guid="{61542E21-4269-4F9E-9E44-B977018ADBD2}">
                     <File Id="filCE8E791056A46F1539121A157A80569D" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_gd.qm" />
                 </Component>
-                <Component Id="cmp481F3650A38CD081F5BC2FF12AB2B668" Guid="{D1AF6022-49A9-4028-AC35-62845ED40D6D}">
+                <Component Id="cmp481F3650A38CD081F5BC2FF12AB2B668" Guid="{0A37C1FF-7EF8-42AB-A1CE-57422C117991}">
                     <File Id="fil627AB198BDB7C0A49591A69BDD5639C8" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_he.qm" />
                 </Component>
-                <Component Id="cmp43D2392DA5BEE23B96027C84F26C354B" Guid="{9F6EF7A0-DAF9-4027-82AB-03F6E7CD2C03}">
+                <Component Id="cmp43D2392DA5BEE23B96027C84F26C354B" Guid="{B505D313-3644-4811-961B-95A09EC3872C}">
                     <File Id="fil6A50090FBDB55A1F2D6FC165AED30533" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_hr.qm" />
                 </Component>
-                <Component Id="cmpA50522D218405951F89D17D119351B18" Guid="{EED8BA40-ED6D-4E23-A056-61A4DFF25838}">
+                <Component Id="cmpA50522D218405951F89D17D119351B18" Guid="{5987DFE5-F36E-4FA6-875F-3497A2A72458}">
                     <File Id="fil1F005D15C5518B643D663B9888357886" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_hu.qm" />
                 </Component>
-                <Component Id="cmpA09A8F8BA08597FD63B9ED1BEA63F305" Guid="{74C5D15C-A9EA-4753-87B4-D5F0B0E65591}">
+                <Component Id="cmpA09A8F8BA08597FD63B9ED1BEA63F305" Guid="{2C66DEE9-B61A-4964-AB25-84AB4C178503}">
                     <File Id="filBBE4D6D16BE762C49B9A5486A4722B95" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_it.qm" />
                 </Component>
-                <Component Id="cmpE69EA7F5DEA3E1EC347D090F26A99637" Guid="{B38BE726-95E8-4BC9-AB76-023BBE04D8E1}">
+                <Component Id="cmpE69EA7F5DEA3E1EC347D090F26A99637" Guid="{B5A0C257-D48B-4761-BC59-0CDD5FDCBD1D}">
                     <File Id="fil84A2E34B70FEA2A44EE5F24D4E855A90" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_ja.qm" />
                 </Component>
-                <Component Id="cmp873306C0DE34EE51EC281ED99FCE1812" Guid="{A77A389E-14FD-46DC-BC86-98F36E6AB28F}">
+                <Component Id="cmp873306C0DE34EE51EC281ED99FCE1812" Guid="{6681FFF9-E328-4BE8-B3AF-0E33746F2B91}">
                     <File Id="filD23618C759CFE4AD60746F98E64031CF" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_ko.qm" />
                 </Component>
-                <Component Id="cmpE194A05F79896600A44AA9AB26616C57" Guid="{76CB4B72-42B0-46F2-A91D-70D683E3F625}">
+                <Component Id="cmpE194A05F79896600A44AA9AB26616C57" Guid="{0BACC2BC-E28F-48D3-A4DF-D4CD5F691B83}">
                     <File Id="fil21E2B0C50D76EB2158D6E98AC367C5A7" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_lv.qm" />
                 </Component>
-                <Component Id="cmp3AE4AE121A7E9EE253808A7FACE5B6AF" Guid="{37F2D6CB-E3AF-4D4E-BBB4-84D1F06AADC8}">
+                <Component Id="cmp3AE4AE121A7E9EE253808A7FACE5B6AF" Guid="{6FD29AD3-8636-43F0-87DC-F5596B8AB543}">
                     <File Id="filB823C966C65A729EBEECF2299BEA3A99" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_nl.qm" />
                 </Component>
-                <Component Id="cmp912F55B90E41A22142DF1218C5ACFCCE" Guid="{ABFEE0DA-1535-40A1-AE27-1D39D2855C85}">
+                <Component Id="cmp912F55B90E41A22142DF1218C5ACFCCE" Guid="{8E0FB924-7CF8-480F-B4B5-AAFE1E584981}">
                     <File Id="fil272CAA9887B44718C89860882EE5F715" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_nn.qm" />
                 </Component>
-                <Component Id="cmp77E77384BA8D9763F71053197AF2341C" Guid="{D6918004-9BCD-465A-A006-508D230BE781}">
+                <Component Id="cmp77E77384BA8D9763F71053197AF2341C" Guid="{B333EFCF-8A44-425C-93BF-528C55258691}">
                     <File Id="fil2BE4A53065FD33357D5CD56A6F1DFA6A" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_pl.qm" />
                 </Component>
-                <Component Id="cmp5DD670EB7A0B425E88B2306895DE1605" Guid="{770A6A6F-7773-4E35-819B-1ECAD37A9DE4}">
+                <Component Id="cmp5DD670EB7A0B425E88B2306895DE1605" Guid="{B4CEF57C-E2C1-4B26-B1A1-1A3F7850E9CB}">
                     <File Id="fil9AC9963C6967259CE41153FA3A9E59CE" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_pt_BR.qm" />
                 </Component>
-                <Component Id="cmpA1E1BAE253FF81ECCBCF863E965B699F" Guid="{210E3CDD-DF88-4866-AFF9-E90E61BD3445}">
+                <Component Id="cmpA1E1BAE253FF81ECCBCF863E965B699F" Guid="{7DFC24AF-BC27-4519-8D2E-A8D444ABAA8E}">
                     <File Id="fil5CA4DBD6BCBA5BCCBE2887A0B8740559" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_ru.qm" />
                 </Component>
-                <Component Id="cmpC84C89EB154B67E483B44C2EEE09974E" Guid="{EAA9F1DC-6F36-4FF0-A580-C4A5BEE0F699}">
+                <Component Id="cmpC84C89EB154B67E483B44C2EEE09974E" Guid="{B6BBD4F3-2EDD-464A-8A16-092CC83A654D}">
                     <File Id="filB850ADC7F23EA7D28A7A376032FD77CF" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_sk.qm" />
                 </Component>
-                <Component Id="cmp74D9855279ACE9DACB7951718A902154" Guid="{12C42C76-2A16-4993-A5EB-7116B38F18CD}">
+                <Component Id="cmp74D9855279ACE9DACB7951718A902154" Guid="{3860E733-0C37-4F3E-9F0C-27CFAC3A2557}">
                     <File Id="filD2ADA6293A3F603519BD43F57A4F44B0" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_tr.qm" />
                 </Component>
-                <Component Id="cmpAB19D7F1204AB8689F9305CA20017606" Guid="{FB7D0B07-64FE-4878-A4F5-58DB6E28AF4D}">
+                <Component Id="cmpAB19D7F1204AB8689F9305CA20017606" Guid="{F047C524-00E6-4EBE-B662-69A026E6271C}">
                     <File Id="fil2339578BBAEBC351A673A73F46F01D4F" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_uk.qm" />
                 </Component>
-                <Component Id="cmp6BF9C18DC365BBC9FEC2C5A0B83A6C11" Guid="{4892D2FF-AF91-4325-8CA3-EB077CC770E2}">
+                <Component Id="cmp6BF9C18DC365BBC9FEC2C5A0B83A6C11" Guid="{C765C21C-C21E-4E7F-995B-40EEAD695E1A}">
                     <File Id="filC75F9E75D7711B45F5753F098A52BE05" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_zh_CN.qm" />
                 </Component>
-                <Component Id="cmp89F2AF8D8BBFADEF8AF63235072D3B68" Guid="{13EDF8EF-90F4-4FC0-A214-F49687B5D5E3}">
+                <Component Id="cmp89F2AF8D8BBFADEF8AF63235072D3B68" Guid="{4C583CF5-0D1C-4DCA-8771-7DC6C8E65A54}">
                     <File Id="filCEACDFF6ABF72E97CEC05D47C488E359" KeyPath="yes" Source="$(var.BuildDir)\translations\qt_zh_TW.qm" />
                 </Component>
             </Directory>
